@@ -1,0 +1,97 @@
+{
+
+"Description" : "Create one ec2 instance aws linux 2 with docker and static ip",
+
+"Mappings" : {
+    "AmiMap" : { "ServerType01" : { "id" : "ami-02354e95b39ca8dec" } },
+    "KeyPair" : { "Key01" : { "key" : "key-pair-teste" } },
+    "SubNet" : { "us-east-1e" : { "SubNetId" : "subnet-4fdfd571" , "Ip" : "172.31.48.11" },
+                 "us-east-1f" : { "SubNetId" : "subnet-68d46c66" , "Ip" : "172.31.64.11" },
+                 "us-east-1b" : { "SubNetId" : "subnet-ccf439ed" , "Ip" : "172.31.80.11" },
+                 "us-east-1c" : { "SubNetId" : "subnet-c2891f8f" , "Ip" : "172.31.16.11" },
+                 "us-east-1a" : { "SubNetId" : "subnet-915097f7" , "Ip" : "172.31.0.11"  },
+                 "us-east-1d" : { "SubNetId" : "subnet-85ca09da" , "Ip" : "172.31.32.11" }
+                 },
+    "Vpc" : { "Vpc01" : { "VpcId" : "vpc-3e879444" } },
+    "Sg"  : { "Sg01" : { "SgId" : "sg-03a75a7d741b59e23" } },
+    "UserData" : { "Script01" : { "ScriptList" : [
+                     "#!/bin/bash -xe\n",
+                     "yum update -y \n",
+                     "amazon-linux-extras install -y docker \n",
+                     "service docker start \n",
+                     "systemctl enable docker \n",
+                     "usermod -a -G docker ec2-user \n",
+                     "curl -L " ,
+                     "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"" ,
+                     " -o /usr/local/bin/docker-compose \n",
+                     "chmod +x /usr/local/bin/docker-compose \n"
+                     ] } }
+    },
+
+"Parameters" : {
+    "KeyNameParam": {
+        "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+        "Type": "AWS::EC2::KeyPair::KeyName",
+        "Default" : "key-pair-teste",
+        "ConstraintDescription" : "must be the name of an existing EC2 KeyPair."
+      },
+    "InstanceTypeParam" : {
+        "Description" : "WebServer EC2 instance type",
+        "Type" : "String",
+        "Default" : "t2.micro",
+        "AllowedValues" : [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
+        "ConstraintDescription" : "must be a valid EC2 instance type."
+        }
+    },
+
+"Resources" : {
+
+
+    "TemplateDockerAwsLinux2" : {
+        "Type" : "AWS::EC2::LaunchTemplate",
+        "Properties" : {
+            "LaunchTemplateData" : {
+                "ImageId"      : { "Fn::FindInMap" : [ "AmiMap", "ServerType01", "id" ] },
+                "InstanceType" : { "Ref" : "InstanceTypeParam" },
+                "KeyName"      : { "Fn::FindInMap" : [ "KeyPair", "Key01", "key" ] },
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", { "Fn::FindInMap" : [ "UserData", "Script01", "ScriptList" ] } ] } }
+                } ,
+            "LaunchTemplateName" : "templ-docker-aws-linux2"
+            }
+},
+
+    "TemplateDockerAwsLinux2AllTrafic" : {
+        "Type" : "AWS::EC2::LaunchTemplate",
+        "Properties" : {
+            "LaunchTemplateData" : {
+                "ImageId"      : { "Fn::FindInMap" : [ "AmiMap", "ServerType01", "id" ] },
+                "InstanceType" : { "Ref" : "InstanceTypeParam" },
+                "KeyName"      : { "Fn::FindInMap" : [ "KeyPair", "Key01", "key" ] },
+                "SecurityGroupIds" : [ { "Fn::FindInMap" : [ "Sg", "Sg01", "SgId" ] } ],
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", { "Fn::FindInMap" : [ "UserData", "Script01", "ScriptList" ] } ] } }
+                } ,
+            "LaunchTemplateName" : "templ-docker-aws-linux2-all-trafic"
+            }
+},
+
+    "instanciadocker" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+            "Tags" : [ {"Key" : "Name", "Value" : "docker01"} ],
+            "AvailabilityZone" : "us-east-1a",
+            "NetworkInterfaces": [ {
+                     "Description" : "Primary Network Interface",
+                     "DeviceIndex" : "0",
+                     "SubnetId" : { "Fn::FindInMap" : [ "SubNet", "us-east-1a", "SubNetId" ] },
+                     "PrivateIpAddress" :  { "Fn::FindInMap" : [ "SubNet", "us-east-1a", "Ip" ] },
+                     "GroupSet" : [  { "Fn::FindInMap" : [ "Sg", "Sg01", "SgId" ] } ]
+                     } ],
+            "ImageId"      : { "Fn::FindInMap" : [ "AmiMap", "ServerType01", "id" ] },
+            "InstanceType" : { "Ref" : "InstanceTypeParam" },
+            "KeyName"      : { "Fn::FindInMap" : [ "KeyPair", "Key01", "key" ] },
+            "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", { "Fn::FindInMap" : [ "UserData", "Script01", "ScriptList" ] } ] } }
+            }
+        }
+    }
+
+}

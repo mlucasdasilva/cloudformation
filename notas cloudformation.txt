@@ -1,0 +1,62 @@
+
+https://www.youtube.com/watch?v=APc1JrJUrMs
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-instance.html
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-launchtemplate-launchtemplatedata.html
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group-rule-1.html
+
+https://docs.aws.amazon.com/pt_br/AWSCloudFormation/latest/UserGuide/quickref-ec2.html
+
+"Resources" : {
+    "Logical ID" : {
+        "Type" : "Resource type",
+        "Properties" : {
+            Set of properties
+        }
+    }
+}
+
+"Resources" : {
+    "MyInstance" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+            "UserData" : {
+                "Fn::Base64" : {
+                    "Fn::Join" : [ "", [ "Queue=", { "Ref" : "MyQueue" } ] ]
+                 } },
+            "AvailabilityZone" : "us-east-1a",
+            "ImageId" : "ami-0ff8a91507f77f867"
+        }
+    },
+
+    "MyQueue" : {
+        "Type" : "AWS::SQS::Queue",
+        "Properties" : {
+        }
+    }
+}     
+
+"MyEC2Instance" : {
+   "Type" : "AWS::EC2::Instance",
+   "Properties" : {
+      "AvailabilityZone" : "us-east-1a",
+      "ImageId" : "ami-79fd7eee",
+      "KeyName" : "testkey",
+      "BlockDeviceMappings" : [
+         {
+            "DeviceName" : "/dev/sdm",
+            "Ebs" : {
+              "VolumeType" : "io1",
+              "Iops" : "200",
+              "DeleteOnTermination" : "false",
+              "VolumeSize" : "20"
+            }
+          }, 
+          {
+            "DeviceName" : "/dev/sdk",
+            "NoDevice" : {}
+          }
+      ]
+   }
+}
+
