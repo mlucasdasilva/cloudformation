@@ -1,0 +1,29 @@
+---
+Resources:
+  instanciadocker:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+      - Key: Name
+        Value: docker01
+      AvailabilityZone: us-east-1a
+      ImageId: ami-02354e95b39ca8dec
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - sg-03a75a7d741b59e23
+      KeyName: key-pair-teste
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "yum update -y \n"
+            - "amazon-linux-extras install -y docker \n"
+            - "service docker start \n"
+            - "systemctl enable docker \n"
+            - "usermod -a -G docker ec2-user \n"
+            - 'curl -L '
+            - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+              -s)-$(uname -m)"'
+            - " -o /usr/local/bin/docker-compose \n"
+            - "chmod +x /usr/local/bin/docker-compose \n"
