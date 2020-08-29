@@ -1,6 +1,6 @@
 {
 
-"Description" : "Create one ec2 instance aws linux 2 with docker",
+"Description" : "Create one ec2 instance aws linux 2 with docker. You need a previously created security group and private key (key pair). You have to adjust those properties accordingly: AvailabilityZone, SecurityGroupIds, and KeyName.",
 
 "Resources" : {
     "instanciadocker" : {

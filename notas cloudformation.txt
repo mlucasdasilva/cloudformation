@@ -1,4 +1,6 @@
 
+Links: 
+
 https://www.youtube.com/watch?v=APc1JrJUrMs
 
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-instance.html
@@ -6,6 +8,9 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group-rule-1.html
 
 https://docs.aws.amazon.com/pt_br/AWSCloudFormation/latest/UserGuide/quickref-ec2.html
+
+
+### "Resources" Syntax:
 
 "Resources" : {
     "Logical ID" : {
@@ -15,6 +20,9 @@ https://docs.aws.amazon.com/pt_br/AWSCloudFormation/latest/UserGuide/quickref-ec
         }
     }
 }
+
+
+### Exemplo de instancia com recurso SQS
 
 "Resources" : {
     "MyInstance" : {
@@ -28,13 +36,16 @@ https://docs.aws.amazon.com/pt_br/AWSCloudFormation/latest/UserGuide/quickref-ec
             "ImageId" : "ami-0ff8a91507f77f867"
         }
     },
-
     "MyQueue" : {
         "Type" : "AWS::SQS::Queue",
         "Properties" : {
         }
     }
 }     
+
+
+
+### Exemplo de instancia com storage
 
 "MyEC2Instance" : {
    "Type" : "AWS::EC2::Instance",
