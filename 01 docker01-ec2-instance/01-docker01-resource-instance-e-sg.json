@@ -1,0 +1,85 @@
+{
+  "Parameters": {
+    "KeyNameParam": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "key-pair-teste",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+    "VPC": {
+      "Description": "ID of an existing VPC",
+      "Type": "AWS::EC2::VPC::Id",
+      "Default": "none",
+      "ConstraintDescription": "must be the ID of an existing VPC."
+    }
+  },
+  "Resources": {
+    "AllTrafficSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": "AllTrafficSg01",
+        "GroupDescription": "SG libera todo trafego",
+        "SecurityGroupIngress": [
+          {
+            "Description": "All traffic inbound ip4 allowed",
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "0",
+            "ToPort": "65535"
+          },
+          {
+            "Description": "All traffic inbound ip6 allowed",
+            "IpProtocol": "-1",
+            "CidrIpv6": "::/0",
+            "FromPort": "0",
+            "ToPort": "65535"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "instanciadocker": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "docker01"
+          }
+        ],
+        "AvailabilityZone": "us-east-1a",
+        "ImageId": "ami-02354e95b39ca8dec",
+        "InstanceType": "t2.micro",
+        "SecurityGroupIds": [
+          {
+            "Ref": "AllTrafficSecurityGroup"
+          }
+        ],
+        "KeyName": {
+          "Ref": "KeyNameParam"
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -xe\n",
+                "yum update -y \n",
+                "amazon-linux-extras install -y docker \n",
+                "service docker start \n",
+                "systemctl enable docker \n",
+                "usermod -a -G docker ec2-user \n",
+                "curl -L ",
+                "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"",
+                " -o /usr/local/bin/docker-compose \n",
+                "chmod +x /usr/local/bin/docker-compose \n"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
+}
