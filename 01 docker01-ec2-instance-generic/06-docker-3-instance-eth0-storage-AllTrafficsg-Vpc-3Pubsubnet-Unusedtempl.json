@@ -1,0 +1,647 @@
+{
+
+"Description" : "Create one ec2 instance aws linux 2 with docker and static ip",
+
+"Mappings": {
+    "AmiMap": {
+      "ServerType01": {
+        "id": "ami-02354e95b39ca8dec"
+      }
+    },
+    "UserData": {
+      "Script01": {
+        "ScriptList": [
+          "#!/bin/bash -xe\n",
+          "yum update -y \n",
+          "amazon-linux-extras install -y docker \n",
+          "service docker start \n",
+          "systemctl enable docker \n",
+          "usermod -a -G docker ec2-user \n",
+          "curl -L ",
+          "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"",
+          " -o /usr/local/bin/docker-compose \n",
+          "chmod +x /usr/local/bin/docker-compose \n"
+        ]
+      }
+    }
+  },
+
+"Parameters" : {
+    "EnvironmentName": {
+      "Description": "An environment name that is prefixed to resource names",
+      "Type": "String"
+    },
+    "KeyNameParam": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "key-pair-teste",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+    "VpcCIDR": {
+      "Description": "Please enter the IP range (CIDR notation) for this VPC",
+      "Type": "String",
+      "Default": "10.192.0.0/16"
+    },
+    "PublicSubnet1CIDR": {
+      "Description": "Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone",
+      "Type": "String",
+      "Default": "10.192.11.0/24"
+    },
+    "PublicSubnet2CIDR": {
+      "Description": "Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone",
+      "Type": "String",
+      "Default": "10.192.12.0/24"
+    },
+    "PublicSubnet3CIDR": {
+      "Description": "Please enter the IP range (CIDR notation) for the private subnet in the 3rd Availability Zone",
+      "Type": "String",
+      "Default": "10.192.13.0/24"
+    },
+    "IpHostSubnet1": {
+      "Description": "Please enter the IP for the host subnet in the 1st Availability Zone",
+      "Type": "String",
+      "Default": "10.192.11.50"
+    },
+    "IpHostSubnet2": {
+      "Description": "Please enter the IP for the host subnet in the 2nd Availability Zone",
+      "Type": "String",
+      "Default": "10.192.12.50"
+    },
+    "IpHostSubnet3": {
+      "Description": "Please enter the IP for the host subnet in the 3rd Availability Zone",
+      "Type": "String",
+      "Default": "10.192.13.50"
+    },
+    "InstanceTypeParam": {
+      "Description": "WebServer EC2 instance type",
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues": [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+      }
+    },
+
+"Resources" : {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Ref": "VpcCIDR"
+        },
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Ref": "EnvironmentName"
+            }
+          }
+        ]
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Ref": "EnvironmentName"
+            }
+          }
+        ]
+      }
+    },
+    "InternetGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        },
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "PublicSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "CidrBlock": {
+          "Ref": "PublicSubnet1CIDR"
+        },
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName} Public Subnet (AZ1)"
+            }
+          }
+        ]
+      }
+    },
+    "PublicSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "CidrBlock": {
+          "Ref": "PublicSubnet2CIDR"
+        },
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName} Public Subnet (AZ2)"
+            }
+          }
+        ]
+      }
+    },
+    "PublicSubnet3": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            2,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "CidrBlock": {
+          "Ref": "PublicSubnet3CIDR"
+        },
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName} Public Subnet (AZ3)"
+            }
+          }
+        ]
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName} Public Routes"
+            }
+          }
+        ]
+      }
+    },
+    "DefaultPublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "InternetGatewayAttachment",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "PublicSubnet1RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnet1"
+        }
+      }
+    },
+    "PublicSubnet2RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnet2"
+        }
+      }
+    },
+    "PublicSubnet3RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnet3"
+        }
+      }
+    },
+    "NoIngressSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": "no-ingress-sg",
+        "GroupDescription": "Security group with no ingress rule",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "AllTrafficSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": "AllTrafficSg01",
+        "GroupDescription": "SG libera todo trafego",
+        "SecurityGroupIngress": [
+          {
+            "Description": "All traffic inbound ip4 allowed",
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "0",
+            "ToPort": "65535"
+          },
+          {
+            "Description": "All traffic inbound ip6 allowed",
+            "IpProtocol": "-1",
+            "CidrIpv6": "::/0",
+            "FromPort": "0",
+            "ToPort": "65535"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "TemplateDockerAwsLinux2AllTrafic": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": {
+            "Fn::FindInMap": [
+              "AmiMap",
+              "ServerType01",
+              "id"
+            ]
+          },
+          "InstanceType": {
+            "Ref": "InstanceTypeParam"
+          },
+          "KeyName": {
+            "Ref": "KeyNameParam"
+          },
+          "SecurityGroupIds": [
+            {
+              "Ref": "AllTrafficSecurityGroup"
+            }
+          ],
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Join": [
+                "",
+                {
+                  "Fn::FindInMap": [
+                    "UserData",
+                    "Script01",
+                    "ScriptList"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "LaunchTemplateName": "templ-docker-aws-linux2-all-trafic"
+      }
+    },
+    "instanciadocker01": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "docker01"
+          }
+        ],
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "NetworkInterfaces": [
+          {
+            "Description": "Primary Network Interface",
+            "DeviceIndex": "0",
+            "SubnetId": {
+              "Ref": "PublicSubnet1"
+            },
+            "PrivateIpAddress": {
+              "Ref": "IpHostSubnet1"
+            },
+            "GroupSet": [
+              {
+                "Ref": "AllTrafficSecurityGroup"
+              }
+            ]
+          }
+        ],
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AmiMap",
+            "ServerType01",
+            "id"
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceTypeParam"
+        },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
+        "KeyName": {
+          "Ref": "KeyNameParam"
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              {
+                "Fn::FindInMap": [
+                  "UserData",
+                  "Script01",
+                  "ScriptList"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "instanciadocker02": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "docker02"
+          }
+        ],
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "NetworkInterfaces": [
+          {
+            "Description": "Primary Network Interface",
+            "DeviceIndex": "0",
+            "SubnetId": {
+              "Ref": "PublicSubnet2"
+            },
+            "PrivateIpAddress": {
+              "Ref": "IpHostSubnet2"
+            },
+            "GroupSet": [
+              {
+                "Ref": "AllTrafficSecurityGroup"
+              }
+            ]
+          }
+        ],
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AmiMap",
+            "ServerType01",
+            "id"
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceTypeParam"
+        },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
+        "KeyName": {
+          "Ref": "KeyNameParam"
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              {
+                "Fn::FindInMap": [
+                  "UserData",
+                  "Script01",
+                  "ScriptList"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "instanciadocker03": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "docker03"
+          }
+        ],
+        "AvailabilityZone": {
+          "Fn::Select": [
+            2,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "NetworkInterfaces": [
+          {
+            "Description": "Primary Network Interface",
+            "DeviceIndex": "0",
+            "SubnetId": {
+              "Ref": "PublicSubnet3"
+            },
+            "PrivateIpAddress": {
+              "Ref": "IpHostSubnet3"
+            },
+            "GroupSet": [
+              {
+                "Ref": "AllTrafficSecurityGroup"
+              }
+            ]
+          }
+        ],
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AmiMap",
+            "ServerType01",
+            "id"
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceTypeParam"
+        },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
+        "KeyName": {
+          "Ref": "KeyNameParam"
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              {
+                "Fn::FindInMap": [
+                  "UserData",
+                  "Script01",
+                  "ScriptList"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+},
+
+"Outputs": {
+    "VPC": {
+      "Description": "A reference to the created VPC",
+      "Value": {
+        "Ref": "VPC"
+      }
+    },
+    "PublicSubnets": {
+      "Description": "A list of the public subnets",
+      "Value": {
+        "Fn::Join": [
+          ",",
+          [
+            {
+              "Ref": "PublicSubnet1"
+            },
+            {
+              "Ref": "PublicSubnet2"
+            },
+            {
+              "Ref": "PublicSubnet3"
+            }
+          ]
+        ]
+      }
+    },
+    "PublicSubnet1": {
+      "Description": "A reference to the public subnet in the 1st Availability Zone",
+      "Value": {
+        "Ref": "PublicSubnet1"
+      }
+    },
+    "PublicSubnet2": {
+      "Description": "A reference to the public subnet in the 2nd Availability Zone",
+      "Value": {
+        "Ref": "PublicSubnet2"
+      }
+    },
+    "PublicSubnet3": {
+      "Description": "A reference to the public subnet in the 3rd Availability Zone",
+      "Value": {
+        "Ref": "PublicSubnet3"
+      }
+    },
+    "NoIngressSecurityGroup": {
+      "Description": "Security group with no ingress rule",
+      "Value": {
+        "Ref": "NoIngressSecurityGroup"
+      }
+    }
+  }
+
+
+}

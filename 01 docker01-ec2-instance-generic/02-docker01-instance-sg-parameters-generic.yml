@@ -1,0 +1,138 @@
+---
+Description: Create one ec2 instance aws linux 2
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe\n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y docker \n"
+      - "service docker start \n"
+      - "systemctl enable docker \n"
+      - "usermod -a -G docker ec2-user \n"
+      - 'curl -L '
+      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+        -s)-$(uname -m)"'
+      - " -o /usr/local/bin/docker-compose \n"
+      - "chmod +x /usr/local/bin/docker-compose \n"
+Parameters:
+  VpcParam:
+    Description: Name of an existing VPC
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-3e879444
+    ConstraintDescription: must be the ID of an existing VPC.
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  AmiParam:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+  InstanceTypeParam:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+    - t1.micro
+    - t2.nano
+    - t2.micro
+    - t2.small
+    - t2.medium
+    - t2.large
+    - m1.small
+    - m1.medium
+    - m1.large
+    - m1.xlarge
+    - m2.xlarge
+    - m2.2xlarge
+    - m2.4xlarge
+    - m3.medium
+    - m3.large
+    - m3.xlarge
+    - m3.2xlarge
+    - m4.large
+    - m4.xlarge
+    - m4.2xlarge
+    - m4.4xlarge
+    - m4.10xlarge
+    - c1.medium
+    - c1.xlarge
+    - c3.large
+    - c3.xlarge
+    - c3.2xlarge
+    - c3.4xlarge
+    - c3.8xlarge
+    - c4.large
+    - c4.xlarge
+    - c4.2xlarge
+    - c4.4xlarge
+    - c4.8xlarge
+    - g2.2xlarge
+    - g2.8xlarge
+    - r3.large
+    - r3.xlarge
+    - r3.2xlarge
+    - r3.4xlarge
+    - r3.8xlarge
+    - i2.xlarge
+    - i2.2xlarge
+    - i2.4xlarge
+    - i2.8xlarge
+    - d2.xlarge
+    - d2.2xlarge
+    - d2.4xlarge
+    - d2.8xlarge
+    - hi1.4xlarge
+    - hs1.8xlarge
+    - cr1.8xlarge
+    - cc2.8xlarge
+    - cg1.4xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+Resources:
+  SgAllTraffic:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: sgAllTraffic01
+      GroupDescription: SG libera todo trafego
+      SecurityGroupIngress:
+      - Description: All traffic inbound ip4 allowed
+        IpProtocol: "-1"
+        CidrIp: 0.0.0.0/0
+        FromPort: '0'
+        ToPort: '65535'
+      - Description: All traffic inbound ip6 allowed
+        IpProtocol: "-1"
+        CidrIpv6: "::/0"
+        FromPort: '0'
+        ToPort: '65535'
+      VpcId:
+        Ref: VpcParam
+  instanciadocker:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+      - Key: Name
+        Value: docker01
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
+      SecurityGroupIds:
+      - Ref: SgAllTraffic
+      ImageId:
+        Ref: AmiParam
+      InstanceType:
+        Ref: InstanceTypeParam
+      KeyName:
+        Ref: KeyNameParam
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - Fn::FindInMap:
+            - UserData
+            - Script01
+            - ScriptList
