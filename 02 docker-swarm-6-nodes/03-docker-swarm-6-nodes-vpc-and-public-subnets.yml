@@ -416,10 +416,7 @@ Resources:
         InstanceType:
           Ref: InstanceTypeParam
         KeyName:
-          Fn::FindInMap:
-          - KeyPair
-          - Key01
-          - key
+          Ref: KeyNameParam
         SecurityGroupIds:
         - Ref: AllTrafficSecurityGroup
         UserData:
@@ -653,6 +650,8 @@ Outputs:
         - Ref: PublicSubnet2
         - Ref: PublicSubnet3
         - Ref: PublicSubnet4
+        - Ref: PublicSubnet5
+        - Ref: PublicSubnet6
 
   PublicSubnet1:
     Description: A reference to the public subnet in the 1st Availability Zone

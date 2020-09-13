@@ -1,22 +1,8 @@
 {
-  "Description": "This template deploys a VPC, with a pair of public spread across two Availability Zones. It deploys an internet gateway, with a default route on the public subnets.",
 
-  "Mappings": {
-    "KeyPair": {
-      "Key01": {
-        "key": "key-pair-teste"
-      }
-    },
-    "Vpc": {
-      "Vpc01": {
-        "VpcId": "vpc-3e879444"
-      }
-    },
-    "Sg": {
-      "Sg01": {
-        "SgId": "sg-03a75a7d741b59e23"
-      }
-    },
+"Description" : "Create one ec2 instance aws linux 2 with docker and static ip",
+
+"Mappings": {
     "AmiMap": {
       "ServerType01": {
         "id": "ami-02354e95b39ca8dec"
@@ -40,7 +26,7 @@
     }
   },
 
-  "Parameters": {
+"Parameters" : {
     "EnvironmentName": {
       "Description": "An environment name that is prefixed to resource names",
       "Type": "String"
@@ -71,116 +57,46 @@
       "Type": "String",
       "Default": "10.192.13.0/24"
     },
-    "PublicSubnet4CIDR": {
-      "Description": "Please enter the IP range (CIDR notation) for the private subnet in the 4th Availability Zone",
-      "Type": "String",
-      "Default": "10.192.14.0/24"
-    },
-    "PublicSubnet5CIDR": {
-      "Description": "Please enter the IP range (CIDR notation) for the private subnet in the 5th Availability Zone",
-      "Type": "String",
-      "Default": "10.192.15.0/24"
-    },
-    "PublicSubnet6CIDR": {
-      "Description": "Please enter the IP range (CIDR notation) for the private subnet in the 6th Availability Zone",
-      "Type": "String",
-      "Default": "10.192.16.0/24"
-    },
-    "IpHostSubnet1": {
-      "Description": "Please enter the IP for the host subnet in the 1st Availability Zone",
+    "IpHost1Subnet1": {
+      "Description": "Please enter the IP for the host1 in the 1st Availability Zone",
       "Type": "String",
       "Default": "10.192.11.50"
     },
-    "IpHostSubnet2": {
-      "Description": "Please enter the IP for the host subnet in the 2nd Availability Zone",
+    "IpHost2Subnet1": {
+      "Description": "Please enter the IP for the host2 in the 1st Availability Zone",
+      "Type": "String",
+      "Default": "10.192.11.60"
+    },
+    "IpHost3Subnet2": {
+      "Description": "Please enter the IP for the host3 in the 2nd Availability Zone",
       "Type": "String",
       "Default": "10.192.12.50"
     },
-    "IpHostSubnet3": {
-      "Description": "Please enter the IP for the host subnet in the 3rd Availability Zone",
+    "IpHost4Subnet2": {
+      "Description": "Please enter the IP for the host4 in the 2nd Availability Zone",
+      "Type": "String",
+      "Default": "10.192.12.60"
+    },
+    "IpHost5Subnet3": {
+      "Description": "Please enter the IP for the host5 in the 3rd Availability Zone",
       "Type": "String",
       "Default": "10.192.13.50"
     },
-    "IpHostSubnet4": {
-      "Description": "Please enter the IP for the host subnet in the 4th Availability Zone",
+    "IpHost6Subnet3": {
+      "Description": "Please enter the IP for the host6 in the 3rd Availability Zone",
       "Type": "String",
-      "Default": "10.192.14.50"
-    },
-    "IpHostSubnet5": {
-      "Description": "Please enter the IP for the host subnet in the 5th Availability Zone",
-      "Type": "String",
-      "Default": "10.192.15.50"
-    },
-    "IpHostSubnet6": {
-      "Description": "Please enter the IP for the host subnet in the 6th Availability Zone",
-      "Type": "String",
-      "Default": "10.192.16.50"
+      "Default": "10.192.13.60"
     },
     "InstanceTypeParam": {
       "Description": "WebServer EC2 instance type",
       "Type": "String",
       "Default": "t2.micro",
-      "AllowedValues": [
-        "t1.micro",
-        "t2.nano",
-        "t2.micro",
-        "t2.small",
-        "t2.medium",
-        "t2.large",
-        "m1.small",
-        "m1.medium",
-        "m1.large",
-        "m1.xlarge",
-        "m2.xlarge",
-        "m2.2xlarge",
-        "m2.4xlarge",
-        "m3.medium",
-        "m3.large",
-        "m3.xlarge",
-        "m3.2xlarge",
-        "m4.large",
-        "m4.xlarge",
-        "m4.2xlarge",
-        "m4.4xlarge",
-        "m4.10xlarge",
-        "c1.medium",
-        "c1.xlarge",
-        "c3.large",
-        "c3.xlarge",
-        "c3.2xlarge",
-        "c3.4xlarge",
-        "c3.8xlarge",
-        "c4.large",
-        "c4.xlarge",
-        "c4.2xlarge",
-        "c4.4xlarge",
-        "c4.8xlarge",
-        "g2.2xlarge",
-        "g2.8xlarge",
-        "r3.large",
-        "r3.xlarge",
-        "r3.2xlarge",
-        "r3.4xlarge",
-        "r3.8xlarge",
-        "i2.xlarge",
-        "i2.2xlarge",
-        "i2.4xlarge",
-        "i2.8xlarge",
-        "d2.xlarge",
-        "d2.2xlarge",
-        "d2.4xlarge",
-        "d2.8xlarge",
-        "hi1.4xlarge",
-        "hs1.8xlarge",
-        "cr1.8xlarge",
-        "cc2.8xlarge",
-        "cg1.4xlarge"
-      ],
-      "ConstraintDescription": "must be a valid EC2 instance type."
-    }
-  },
+      "AllowedValues": [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+      }
+    },
 
-  "Resources": {
+"Resources" : {
     "VPC": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
@@ -307,90 +223,6 @@
         ]
       }
     },
-    "PublicSubnet4": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "AvailabilityZone": {
-          "Fn::Select": [
-            3,
-            {
-              "Fn::GetAZs": ""
-            }
-          ]
-        },
-        "CidrBlock": {
-          "Ref": "PublicSubnet4CIDR"
-        },
-        "MapPublicIpOnLaunch": true,
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": {
-              "Fn::Sub": "${EnvironmentName} Public Subnet (AZ4)"
-            }
-          }
-        ]
-      }
-    },
-    "PublicSubnet5": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "AvailabilityZone": {
-          "Fn::Select": [
-            4,
-            {
-              "Fn::GetAZs": ""
-            }
-          ]
-        },
-        "CidrBlock": {
-          "Ref": "PublicSubnet5CIDR"
-        },
-        "MapPublicIpOnLaunch": true,
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": {
-              "Fn::Sub": "${EnvironmentName} Public Subnet (AZ5)"
-            }
-          }
-        ]
-      }
-    },
-    "PublicSubnet6": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "AvailabilityZone": {
-          "Fn::Select": [
-            5,
-            {
-              "Fn::GetAZs": ""
-            }
-          ]
-        },
-        "CidrBlock": {
-          "Ref": "PublicSubnet6CIDR"
-        },
-        "MapPublicIpOnLaunch": true,
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": {
-              "Fn::Sub": "${EnvironmentName} Public Subnet (AZ6)"
-            }
-          }
-        ]
-      }
-    },
     "PublicRouteTable": {
       "Type": "AWS::EC2::RouteTable",
       "Properties": {
@@ -453,39 +285,6 @@
         }
       }
     },
-    "PublicSubnet4RouteTableAssociation": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "PublicRouteTable"
-        },
-        "SubnetId": {
-          "Ref": "PublicSubnet4"
-        }
-      }
-    },
-    "PublicSubnet5RouteTableAssociation": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "PublicRouteTable"
-        },
-        "SubnetId": {
-          "Ref": "PublicSubnet5"
-        }
-      }
-    },
-    "PublicSubnet6RouteTableAssociation": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "PublicRouteTable"
-        },
-        "SubnetId": {
-          "Ref": "PublicSubnet6"
-        }
-      }
-    },
     "NoIngressSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
@@ -537,7 +336,7 @@
             "Ref": "InstanceTypeParam"
           },
           "KeyName": {
-             "Ref": "KeyNameParam"
+            "Ref": "KeyNameParam"
           },
           "SecurityGroupIds": [
             {
@@ -587,7 +386,7 @@
               "Ref": "PublicSubnet1"
             },
             "PrivateIpAddress": {
-              "Ref": "IpHostSubnet1"
+              "Ref": "IpHost1Subnet1"
             },
             "GroupSet": [
               {
@@ -606,6 +405,24 @@
         "InstanceType": {
           "Ref": "InstanceTypeParam"
         },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
         "KeyName": {
           "Ref": "KeyNameParam"
         },
@@ -636,7 +453,7 @@
         ],
         "AvailabilityZone": {
           "Fn::Select": [
-            1,
+            0,
             {
               "Fn::GetAZs": ""
             }
@@ -647,10 +464,10 @@
             "Description": "Primary Network Interface",
             "DeviceIndex": "0",
             "SubnetId": {
-              "Ref": "PublicSubnet2"
+              "Ref": "PublicSubnet1"
             },
             "PrivateIpAddress": {
-              "Ref": "IpHostSubnet2"
+              "Ref": "IpHost2Subnet1"
             },
             "GroupSet": [
               {
@@ -669,6 +486,24 @@
         "InstanceType": {
           "Ref": "InstanceTypeParam"
         },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
         "KeyName": {
           "Ref": "KeyNameParam"
         },
@@ -699,7 +534,7 @@
         ],
         "AvailabilityZone": {
           "Fn::Select": [
-            2,
+            1,
             {
               "Fn::GetAZs": ""
             }
@@ -710,10 +545,10 @@
             "Description": "Primary Network Interface",
             "DeviceIndex": "0",
             "SubnetId": {
-              "Ref": "PublicSubnet3"
+              "Ref": "PublicSubnet2"
             },
             "PrivateIpAddress": {
-              "Ref": "IpHostSubnet3"
+              "Ref": "IpHost3Subnet2"
             },
             "GroupSet": [
               {
@@ -732,6 +567,24 @@
         "InstanceType": {
           "Ref": "InstanceTypeParam"
         },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
         "KeyName": {
           "Ref": "KeyNameParam"
         },
@@ -762,7 +615,7 @@
         ],
         "AvailabilityZone": {
           "Fn::Select": [
-            3,
+            1,
             {
               "Fn::GetAZs": ""
             }
@@ -773,10 +626,10 @@
             "Description": "Primary Network Interface",
             "DeviceIndex": "0",
             "SubnetId": {
-              "Ref": "PublicSubnet4"
+              "Ref": "PublicSubnet2"
             },
             "PrivateIpAddress": {
-              "Ref": "IpHostSubnet4"
+              "Ref": "IpHost4Subnet2"
             },
             "GroupSet": [
               {
@@ -795,6 +648,24 @@
         "InstanceType": {
           "Ref": "InstanceTypeParam"
         },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
         "KeyName": {
           "Ref": "KeyNameParam"
         },
@@ -825,7 +696,7 @@
         ],
         "AvailabilityZone": {
           "Fn::Select": [
-            4,
+            2,
             {
               "Fn::GetAZs": ""
             }
@@ -836,10 +707,10 @@
             "Description": "Primary Network Interface",
             "DeviceIndex": "0",
             "SubnetId": {
-              "Ref": "PublicSubnet5"
+              "Ref": "PublicSubnet3"
             },
             "PrivateIpAddress": {
-              "Ref": "IpHostSubnet5"
+              "Ref": "IpHost5Subnet3"
             },
             "GroupSet": [
               {
@@ -858,6 +729,24 @@
         "InstanceType": {
           "Ref": "InstanceTypeParam"
         },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
         "KeyName": {
           "Ref": "KeyNameParam"
         },
@@ -888,7 +777,7 @@
         ],
         "AvailabilityZone": {
           "Fn::Select": [
-            5,
+            2,
             {
               "Fn::GetAZs": ""
             }
@@ -899,10 +788,10 @@
             "Description": "Primary Network Interface",
             "DeviceIndex": "0",
             "SubnetId": {
-              "Ref": "PublicSubnet6"
+              "Ref": "PublicSubnet3"
             },
             "PrivateIpAddress": {
-              "Ref": "IpHostSubnet6"
+              "Ref": "IpHost6Subnet3"
             },
             "GroupSet": [
               {
@@ -921,6 +810,24 @@
         "InstanceType": {
           "Ref": "InstanceTypeParam"
         },
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName" : "/dev/sdb",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            },
+           {
+              "DeviceName" : "/dev/sdc",
+              "Ebs" : {
+                "VolumeType" : "gp2",
+                "DeleteOnTermination" : "true",
+                "VolumeSize" : "5"
+              }
+            }
+        ],
         "KeyName": {
           "Ref": "KeyNameParam"
         },
@@ -940,9 +847,9 @@
         }
       }
     }
-  },
+},
 
-  "Outputs": {
+"Outputs": {
     "VPC": {
       "Description": "A reference to the created VPC",
       "Value": {
@@ -963,15 +870,6 @@
             },
             {
               "Ref": "PublicSubnet3"
-            },
-            {
-              "Ref": "PublicSubnet4"
-            },
-            {
-              "Ref": "PublicSubnet5"
-            },
-            {
-              "Ref": "PublicSubnet6"
             }
           ]
         ]
@@ -995,24 +893,6 @@
         "Ref": "PublicSubnet3"
       }
     },
-    "PublicSubnet4": {
-      "Description": "A reference to the public subnet in the 4th Availability Zone",
-      "Value": {
-        "Ref": "PublicSubnet4"
-      }
-    },
-    "PublicSubnet5": {
-      "Description": "A reference to the public subnet in the 3rd Availability Zone",
-      "Value": {
-        "Ref": "PublicSubnet5"
-      }
-    },
-    "PublicSubnet6": {
-      "Description": "A reference to the public subnet in the 4th Availability Zone",
-      "Value": {
-        "Ref": "PublicSubnet6"
-      }
-    },
     "NoIngressSecurityGroup": {
       "Description": "Security group with no ingress rule",
       "Value": {
@@ -1020,4 +900,6 @@
       }
     }
   }
+
+
 }
