@@ -145,11 +145,13 @@ Resources:
           - id
         InstanceType:
           Ref: InstanceTypeParam
+#        KeyName:
+#          Fn::FindInMap:
+#          - KeyPair
+#          - Key01
+#          - key
         KeyName:
-          Fn::FindInMap:
-          - KeyPair
-          - Key01
-          - key
+          Ref: KeyNameParam
         UserData:
           Fn::Base64:
             Fn::Join:
@@ -171,11 +173,13 @@ Resources:
           - id
         InstanceType:
           Ref: InstanceTypeParam
+#        KeyName:
+#          Fn::FindInMap:
+#          - KeyPair
+#          - Key01
+#          - key
         KeyName:
-          Fn::FindInMap:
-          - KeyPair
-          - Key01
-          - key
+          Ref: KeyNameParam
         SecurityGroupIds:
         - Fn::FindInMap:
           - Sg
@@ -202,11 +206,13 @@ Resources:
           - id
         InstanceType:
           Ref: InstanceTypeParam
+#        KeyName:
+#          Fn::FindInMap:
+#          - KeyPair
+#          - Key01
+#          - key
         KeyName:
-          Fn::FindInMap:
-          - KeyPair
-          - Key01
-          - key
+          Ref: KeyNameParam
         SecurityGroupIds:
         - Ref: SgAllTraffic
         UserData:
@@ -251,11 +257,13 @@ Resources:
         - id
       InstanceType:
         Ref: InstanceTypeParam
+#      KeyName:
+#        Fn::FindInMap:
+#        - KeyPair
+#        - Key01
+#        - key
       KeyName:
-        Fn::FindInMap:
-        - KeyPair
-        - Key01
-        - key
+          Ref: KeyNameParam
       UserData:
         Fn::Base64:
           Fn::Join:

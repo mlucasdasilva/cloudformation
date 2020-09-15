@@ -1,0 +1,231 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Application Template: Demonstrates how to reference resources from a different stack.
+  This template provisions an EC2 instance in a VPC Subnet provisioned in a different stack.
+
+# This template creates:
+#   Amazon EC2 instance
+#   Security Group
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+#    Default: lab-network
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsLinux2Param:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+
+  AmiTrueNasParam:
+    Description: Select TrueNAS AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-0b29297d20ee25b3a
+    ConstraintDescription: must be the ID of an existing AMI.
+
+  AmiCentos7Param:
+    Description: Select Centos7-minimal AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-0083662ba17882949
+    ConstraintDescription: must be the ID of an existing AMI.
+
+  AmiWindowsServerParam:
+    Description: Select Windows Server AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02a6c9fa263b1caf6
+    ConstraintDescription: must be the ID of an existing AMI. (defaul ami-02a6c9fa263b1caf6 Windows Server 2019 Base with containers)
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  TrueNasInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.large
+      ImageId: !Ref AmiTrueNasParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      Tags:
+        - Key: Name
+          Value: TrueNas1
+
+  DiskVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: 100
+      AvailabilityZone: !GetAtt TrueNasInstance1.AvailabilityZone
+      Tags:
+        - Key: Name
+          Value: TrueNAS Data
+  
+  DiskMountPoint:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref TrueNasInstance1
+      VolumeId: !Ref DiskVolume
+      Device: /dev/sdh
+
+  WindowsInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.medium
+      ImageId: !Ref AmiWindowsServerParam
+      Tags:
+        - Key: Name
+          Value: Windows-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+
+  Centos7Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiCentos7Param
+      Tags:
+        - Key: Name
+          Value: Centos7-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash -ex
+          yum -y update
+          yum -y install iscsi-initiator-utils
+          yum install -y telnet
+          yum install device-mapper-multipath -y
+
+  Centos7Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.medium
+      ImageId: !Ref AmiCentos7Param
+      Tags:
+        - Key: Name
+          Value: Centos7-02
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash -ex
+          yum -y update
+          yum -y install iscsi-initiator-utils
+          yum install -y telnet
+          yum install device-mapper-multipath -y
+
+  AwsLinux2Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2Param
+      Tags:
+        - Key: Name
+          Value: AwsLinux2-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash -ex
+          yum -y install httpd php mysql php-mysql
+          chkconfig httpd on
+          service httpd start
+          if [ ! -f /var/www/html/lab-app.tgz ]; then
+          cd /var/www/html
+          wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/CUR-TF-200-ACACAD/studentdownload/lab-app.tgz
+          tar xvfz lab-app.tgz
+          chown apache:root /var/www/html/rds.conf.php
+          fi
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AwsLinux2Instance1 --region ${AWS::Region}
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  TrueNasURL:
+    Description: URL of the TrueNAS Instance
+    Value: !Sub 'http://${TrueNasInstance1.PublicDnsName}'
+
+  WindowPublicURL:
+    Description: URL of the Windows Instance
+    Value: !Sub '${WindowsInstance1.PublicDnsName}'
+
+  AwsLinux2PublicURL:
+    Description: URL of the Linux Instance
+    Value: !Sub '${AwsLinux2Instance1.PublicDnsName}'

@@ -269,6 +269,32 @@
           "Ref": "VPC"
         }
       }
+    },
+    "AllTrafficSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": "AllTrafficSg",
+        "GroupDescription": "SG allow all traffic",
+        "SecurityGroupIngress": [
+          {
+            "Description": "All traffic inbound ip4 allowed",
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "0",
+            "ToPort": "65535"
+          },
+          {
+            "Description": "All traffic inbound ip6 allowed",
+            "IpProtocol": "-1",
+            "CidrIpv6": "::/0",
+            "FromPort": "0",
+            "ToPort": "65535"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
     }
   },
   "Outputs": {
@@ -373,6 +399,15 @@
       },
       "Export": {
          "Name": { "Fn::Sub": "${AWS::StackName}-NoIngressSecurityGroup" }
+      }
+    },
+    "AllTrafficSecurityGroup": {
+      "Description": "Security group with all traffic allowed",
+      "Value": {
+        "Ref": "AllTrafficSecurityGroup"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-AllTrafficSecurityGroup" }
       }
     }
   }
