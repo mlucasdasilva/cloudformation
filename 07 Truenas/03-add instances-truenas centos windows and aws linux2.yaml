@@ -65,6 +65,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.large
+#      InstanceType: m4.xlarge
       ImageId: !Ref AmiTrueNasParam
       NetworkInterfaces:
         - GroupSet:
@@ -219,13 +220,13 @@ Resources:
 Outputs:
 
   TrueNasURL:
-    Description: URL of the TrueNAS Instance
+    Description: WebUi URL of the TrueNAS Instance
     Value: !Sub 'http://${TrueNasInstance1.PublicDnsName}'
 
   WindowPublicURL:
-    Description: URL of the Windows Instance
-    Value: !Sub '${WindowsInstance1.PublicDnsName}'
+    Description: RDP URL of the Windows Instance
+    Value: !Sub 'rdp://${WindowsInstance1.PublicDnsName}'
 
   AwsLinux2PublicURL:
-    Description: URL of the Linux Instance
-    Value: !Sub '${AwsLinux2Instance1.PublicDnsName}'
+    Description: URL of the Web App in Linux Instance
+    Value: !Sub 'http://${AwsLinux2Instance1.PublicDnsName}'

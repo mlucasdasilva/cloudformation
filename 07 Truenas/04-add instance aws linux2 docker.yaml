@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Docker ec2 instance Template: This template provisions an Docker EC2 instance in a VPC Subnet provisioned in a different stack.
+
+######################
+# Mappings section
+######################
+
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe\n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y docker \n"
+      - "service docker start \n"
+      - "systemctl enable docker \n"
+      - "usermod -a -G docker ec2-user \n"
+      - 'curl -L '
+      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+        -s)-$(uname -m)"'
+      - " -o /usr/local/bin/docker-compose \n"
+      - "chmod +x /usr/local/bin/docker-compose \n"
+      - "yum install -y git \n"
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+#    Default: lab-network
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsLinux2DockerParam:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  AwsLinux2DockerInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: AwsLinux2Docker-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - Fn::FindInMap:
+            - UserData
+            - Script01
+            - ScriptList
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  AwsLinux2DockerURL:
+    Description: URL of the Web App in Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance1.PublicDnsName}'
