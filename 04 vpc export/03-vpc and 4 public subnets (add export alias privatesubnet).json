@@ -409,6 +409,15 @@
       "Export": {
          "Name": { "Fn::Sub": "${AWS::StackName}-AllTrafficSecurityGroup" }
       }
+    },
+    "PublicRouteTable1": {
+      "Description": "Public Route Table",
+      "Value": {
+        "Ref": "PublicRouteTable"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-PublicRouteTable" }
+      }
     }
   }
 }
