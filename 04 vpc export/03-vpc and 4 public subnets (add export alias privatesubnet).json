@@ -21,12 +21,12 @@
       "Type": "String",
       "Default": "10.192.12.0/24"
     },
-    "PublicSubnet3CIDR": {
+    "PrivateSubnet1CIDR": {
       "Description": "Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone",
       "Type": "String",
       "Default": "10.192.13.0/24"
     },
-    "PublicSubnet4CIDR": {
+    "PrivateSubnet2CIDR": {
       "Description": "Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone",
       "Type": "String",
       "Default": "10.192.14.0/24"
@@ -131,7 +131,7 @@
         ]
       }
     },
-    "PublicSubnet3": {
+    "PrivateSubnet1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
         "VpcId": {
@@ -139,27 +139,27 @@
         },
         "AvailabilityZone": {
           "Fn::Select": [
-            2,
+            0,
             {
               "Fn::GetAZs": ""
             }
           ]
         },
         "CidrBlock": {
-          "Ref": "PublicSubnet3CIDR"
+          "Ref": "PrivateSubnet1CIDR"
         },
         "MapPublicIpOnLaunch": true,
         "Tags": [
           {
             "Key": "Name",
             "Value": {
-              "Fn::Sub": "${EnvironmentName} Public Subnet (AZ3)"
+              "Fn::Sub": "${EnvironmentName} Private Subnet (AZ1)"
             }
           }
         ]
       }
     },
-    "PublicSubnet4": {
+    "PrivateSubnet2": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
         "VpcId": {
@@ -167,21 +167,21 @@
         },
         "AvailabilityZone": {
           "Fn::Select": [
-            3,
+            1,
             {
               "Fn::GetAZs": ""
             }
           ]
         },
         "CidrBlock": {
-          "Ref": "PublicSubnet4CIDR"
+          "Ref": "PrivateSubnet2CIDR"
         },
         "MapPublicIpOnLaunch": false,
         "Tags": [
           {
             "Key": "Name",
             "Value": {
-              "Fn::Sub": "${EnvironmentName} Public Subnet (AZ4)"
+              "Fn::Sub": "${EnvironmentName} Private Subnet (AZ2)"
             }
           }
         ]
@@ -238,25 +238,25 @@
         }
       }
     },
-    "PublicSubnet3RouteTableAssociation": {
+    "PrivateSubnet1RouteTableAssociation": {
       "Type": "AWS::EC2::SubnetRouteTableAssociation",
       "Properties": {
         "RouteTableId": {
           "Ref": "PublicRouteTable"
         },
         "SubnetId": {
-          "Ref": "PublicSubnet3"
+          "Ref": "PrivateSubnet1"
         }
       }
     },
-    "PublicSubnet4RouteTableAssociation": {
+    "PrivateSubnet2RouteTableAssociation": {
       "Type": "AWS::EC2::SubnetRouteTableAssociation",
       "Properties": {
         "RouteTableId": {
           "Ref": "PublicRouteTable"
         },
         "SubnetId": {
-          "Ref": "PublicSubnet4"
+          "Ref": "PrivateSubnet2"
         }
       }
     },
@@ -320,10 +320,10 @@
               "Ref": "PublicSubnet2"
             },
             {
-              "Ref": "PublicSubnet3"
+              "Ref": "PrivateSubnet1"
             },
             {
-              "Ref": "PublicSubnet4"
+              "Ref": "PrivateSubnet2"
             }
           ]
         ]
@@ -359,7 +359,7 @@
     "PublicSubnet3": {
       "Description": "A reference to the public subnet in the 3rd Availability Zone",
       "Value": {
-        "Ref": "PublicSubnet3"
+        "Ref": "PrivateSubnet1"
       },
       "Export": {
          "Name": { "Fn::Sub": "${AWS::StackName}-PublicSubnet3ID" }
@@ -368,7 +368,7 @@
     "PublicSubnet4": {
       "Description": "A reference to the public subnet in the 4th Availability Zone",
       "Value": {
-        "Ref": "PublicSubnet4"
+        "Ref": "PrivateSubnet2"
       },
       "Export": {
          "Name": { "Fn::Sub": "${AWS::StackName}-PublicSubnet4ID" }
@@ -377,7 +377,7 @@
     "PrivateSubnet1": {
       "Description": "A private subnet name reference to the public subnet in the 3rd Availability Zone",
       "Value": {
-        "Ref": "PublicSubnet3"
+        "Ref": "PrivateSubnet1"
       },
       "Export": {
          "Name": { "Fn::Sub": "${AWS::StackName}-PrivateSubnet1ID" }
@@ -386,7 +386,7 @@
     "PrivateSubnet2": {
       "Description": "A private subnet name refrence to the public subnet in the 3rd Availability Zone",
       "Value": {
-        "Ref": "PublicSubnet4"
+        "Ref": "PrivateSubnet2"
       },
       "Export": {
          "Name": { "Fn::Sub": "${AWS::StackName}-PrivateSubnet2ID" }
