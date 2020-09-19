@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Application Template: This template provisions 2 EC2 instances in a VPC Subnet provisioned in a different stack.
+
+
+######################
+# Mappings section
+######################
+
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe \n"
+      - "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 \n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y epel \n"
+      - "yum install -y nginx \n"
+      - "service nginx start \n"
+      - "systemctl enable nginx \n"
+      - "yum install -y keepalived \n"
+      - "service keepalived start \n"
+      - "systemctl enable keepalived \n"
+      - "yum install -y git \n"
+
+
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsLinux2Param:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  Nginx1Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiAwsLinux2Param
+      Tags:
+        - Key: Name
+          Value: nginx01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                echo "****************** fim ************************"
+
+  Nginx2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiAwsLinux2Param
+      Tags:
+        - Key: Name
+          Value: nginx02
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - Fn::FindInMap:
+            - UserData
+            - Script01
+            - ScriptList
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  Nginx1PrivateIP:
+    Description: IP of the Docker-01 Linux Instance
+    Value: !GetAtt Nginx1Instance.PrivateIp
+  Nginx2PrivateIP:
+    Description: IP of the Docker-02 Linux Instance
+    Value: !GetAtt Nginx2Instance.PrivateIp
+
+  Nginx1URL:
+    Description: URL of the Docker-01 Linux Instance
+    Value: !Sub 'http://${Nginx1Instance.PublicDnsName}'
+  Nginx2URL:
+    Description: URL of the Docker-02 Linux Instance
+    Value: !Sub 'http://${Nginx2Instance.PublicDnsName}'

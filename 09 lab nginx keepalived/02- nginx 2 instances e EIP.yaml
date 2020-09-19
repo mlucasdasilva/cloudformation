@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Application Template: This template provisions 2 EC2 instances in a VPC Subnet provisioned in a different stack.
+
+
+######################
+# Mappings section
+######################
+
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe \n"
+      - "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 \n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y epel \n"
+      - "yum install -y nginx \n"
+      - "service nginx start \n"
+      - "systemctl enable nginx \n"
+      - "yum install -y keepalived \n"
+      - "systemctl enable keepalived \n"
+      - "yum install -y git \n"
+
+
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsLinux2Param:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  Nginx1Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiAwsLinux2Param
+      Tags:
+        - Key: Name
+          Value: nginx01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      SourceDestCheck: False
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                cp /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf.original
+                cat <<EOF >/etc/keepalived/keepalived.conf
+                ! Configuration File for keepalived MASTER
+                !global_defs {
+                !   notification_email {
+                !     acassen@firewall.loc
+                !     failover@firewall.loc
+                !     sysadmin@firewall.loc
+                !   }
+                !   notification_email_from Alexandre.Cassen@firewall.loc
+                !   smtp_server 192.168.200.1
+                !   smtp_connect_timeout 30
+                !   router_id LVS_DEVEL
+                !   vrrp_skip_check_adv_addr
+                !   vrrp_strict
+                !   vrrp_garp_interval 0
+                !   vrrp_gna_interval 0
+                !   enable_script_security
+                !}
+                vrrp_script chk_http_port {
+                        script "pidof nginx"
+                        interval 2
+                        weight 50
+                }
+                vrrp_instance VI_1 {
+                !        interface enp0s8                       <------   AJUSTAR CONFORME AMBIENTE
+                        interface eth0
+                        state MASTER
+                        virtual_router_id 100
+                        priority 130
+                        authentication {
+                            auth_type PASS
+                            auth_pass 123@admin
+                        }
+                        track_script {
+                            chk_http_port
+                        }
+                        virtual_ipaddress {
+                !               192.168.56.89/24 dev enp0s8     <------   AJUSTAR CONFORME AMBIENTE
+                               192.168.200.16/32 dev eth0
+                        }
+                }
+                EOF
+                service keepalived restart
+                echo "****************** fim ************************"
+
+  Nginx2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiAwsLinux2Param
+      Tags:
+        - Key: Name
+          Value: nginx02
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      SourceDestCheck: False
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                cp /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf.original
+                cat <<EOF >/etc/keepalived/keepalived.conf
+                ! Configuration File for keepalived BACKUP
+                vrrp_script chk_http_port {
+                        script "pidof nginx"
+                        interval 2
+                        weight 50
+                }
+                vrrp_instance VI_1 {
+                !        interface enp0s8                       <------   AJUSTAR CONFORME AMBIENTE
+                        interface eth0
+                        state BACKUP
+                        virtual_router_id 100
+                        priority 100
+                        authentication {
+                            auth_type PASS
+                            auth_pass 123@admin
+                        }
+                        track_script {
+                            chk_http_port
+                        }
+                        virtual_ipaddress {
+                !               192.168.56.89/24 dev enp0s8     <------   AJUSTAR CONFORME AMBIENTE
+                               192.168.200.16/32 dev eth0
+                        }
+                }
+                EOF
+                service keepalived restart
+                echo "****************** fim ************************"
+
+  MyEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref Nginx1Instance
+    DependsOn:
+    - Nginx1Instance
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-PublicRouteTable
+      DestinationCidrBlock: "192.168.200.16/32"
+      InstanceId:
+        Ref: Nginx1Instance
+    DependsOn:
+    - Nginx1Instance
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  Nginx1PrivateIP:
+    Description: IP of the Docker-01 Linux Instance
+    Value: !GetAtt Nginx1Instance.PrivateIp
+  Nginx2PrivateIP:
+    Description: IP of the Docker-02 Linux Instance
+    Value: !GetAtt Nginx2Instance.PrivateIp
+
+  Nginx1URL:
+    Description: URL of the Docker-01 Linux Instance
+    Value: !Sub 'http://${Nginx1Instance.PublicDnsName}'
+  Nginx2URL:
+    Description: URL of the Docker-02 Linux Instance
+    Value: !Sub 'http://${Nginx2Instance.PublicDnsName}'
