@@ -116,7 +116,7 @@ Resources:
                         weight 50
                 }
                 vrrp_instance VI_1 {
-                !        interface enp0s8                       <------   AJUSTAR CONFORME AMBIENTE
+                !        interface enp0s8                    #  <------   AJUSTAR CONFORME AMBIENTE
                         interface eth0
                         state MASTER
                         virtual_router_id 100
@@ -129,7 +129,7 @@ Resources:
                             chk_http_port
                         }
                         virtual_ipaddress {
-                !               192.168.56.89/24 dev enp0s8     <------   AJUSTAR CONFORME AMBIENTE
+                !               192.168.56.89/24 dev enp0s8  #  <------   AJUSTAR CONFORME AMBIENTE
                                192.168.200.16/32 dev eth0
                         }
                 }
@@ -178,7 +178,7 @@ Resources:
                         weight 50
                 }
                 vrrp_instance VI_1 {
-                !        interface enp0s8                       <------   AJUSTAR CONFORME AMBIENTE
+                !        interface enp0s8                    #  <------   AJUSTAR CONFORME AMBIENTE
                         interface eth0
                         state BACKUP
                         virtual_router_id 100
@@ -191,7 +191,7 @@ Resources:
                             chk_http_port
                         }
                         virtual_ipaddress {
-                !               192.168.56.89/24 dev enp0s8     <------   AJUSTAR CONFORME AMBIENTE
+                !               192.168.56.89/24 dev enp0s8  #  <------   AJUSTAR CONFORME AMBIENTE
                                192.168.200.16/32 dev eth0
                         }
                 }
