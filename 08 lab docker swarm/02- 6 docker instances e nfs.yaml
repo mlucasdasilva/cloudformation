@@ -436,12 +436,6 @@ Outputs:
   AwsLinux2Docker2URL:
     Description: URL of the Docker-02 Linux Instance
     Value: !Sub 'http://${AwsLinux2DockerInstance2.PublicDnsName}'
-  AwsLinux2Docker1PrivateIP:
-    Description: IP of the Docker-01 Linux Instance
-    Value: !GetAtt AwsLinux2DockerInstance1.PrivateIp
-  AwsLinux2Docker2PrivateIP:
-    Description: IP of the Docker-02 Linux Instance
-    Value: !GetAtt AwsLinux2DockerInstance2.PrivateIp
   AwsLinux2Docker3URL:
     Description: URL of the Docker-03 in Linux Instance
     Value: !Sub 'http://${AwsLinux2DockerInstance3.PublicDnsName}'
