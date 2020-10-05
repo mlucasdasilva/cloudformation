@@ -87,7 +87,7 @@ Resources:
       AvailabilityZone:
         Fn::Select:
         - 1
-        - Fn::GetAZs:: ''
+        - Fn::GetAZs: ''
       CidrBlock:
         Ref: PublicSubnet2CIDR
       MapPublicIpOnLaunch: true

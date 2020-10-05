@@ -1,0 +1,29 @@
+#!/bin/bash -xe
+# Install docker, docker-compose, git, aws-cli-v2
+# Start docker-swarm-single-node, nginx-docker-service
+# With an exemple for 'aws configure'
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+yum update -y
+amazon-linux-extras install -y docker
+service docker start
+systemctl enable docker
+usermod -a -G docker ec2-user
+curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+yum install -y git
+docker swarm init --advertise-addr eth0
+mkdir /root/.aws
+cat <<EOF > /root/.aws/credentials
+[default]
+aws_access_key_id=ASIAYCHEWJUH7DNZY2SG
+aws_secret_access_key=8V0MfpkQ498fV/UidJIpmHDZ/xWqQyiZ7O+1hBnP
+aws_session_token=FwoGZXIvYXdzENj//////////wEaDNpl/joDOE2fFbLUQCK8AcK8JgBkDhFNbqwN28DU1LPqsUrTm3LG8clWLAb9HvFyl9z92onP2h1V9b8XbSbxuZ3lsEUVc76jH6VFb4wPmGPY1770lssGnL/g58Q+paZXvB+DAdesdxz9kLVDoOis6d/kMkaS1FwmM+NM03iNJMG4gDgGTu0bnV6Ju4mVCcWJqSy+JMbtEmhi4cZrht0/fo2/SRFSM27YFmEVzrGL77qN4t3wa9zMUgjnO8s9BU/1RerdjDgtNRcklWB6KLPZufsFMi3TaZhjrxY1PDlWuGf6wnaNRVN3IsCt1uIvxMDrTFQf4TyN739Tn5IQlHhhf1Y=
+EOF
+yum remove -y aws-cli
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+/usr/local/bin/aws --version
+ln -s /usr/local/bin/aws /usr/bin/aws
+aws --version
+docker service create --name mynginx -p 80:80 nginx

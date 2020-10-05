@@ -73,14 +73,37 @@ Parameters:
     Default: ami-02354e95b39ca8dec
     ConstraintDescription: must be the ID of an existing AMI.
 
-  UserDataParam:
+  UserDataServiceParam:
     Description: >-
-      Commands to be added to user data script.
+      Commands to be executed once in just one master.
     Type: String
     MinLength: 1
     MaxLength: 1024
     Default: docker service create --name mynginx -p 80:80 nginx
-#    Default: echo "no additional user data commands"
+
+#  UserDataParam:
+#    Description: >-
+#      Commands to be added to user data script.
+#    Type: String
+#    MinLength: 1
+#    MaxLength: 1024
+#    Default: docker service create --name mynginx -p 80:80 nginx
+#
+#    UserDataAllMgrParam:
+#    Description: >-
+#      Commands to be added to manager nodes user data script.
+#    Type: String
+#    MinLength: 1
+#    MaxLength: 1024
+#    Default: echo "no additional user data commands to manager nodes"
+#
+#  UserDataAllWorkersParam:
+#    Description: >-
+#      Commands to be added to worker nodes user data script.
+#    Type: String
+#    MinLength: 1
+#    MaxLength: 1024
+#    Default: echo "no additional user data commands to worker nodes"
 
 
 
@@ -192,6 +215,8 @@ Resources:
                 chmod 775 /mnt/volume-docker/join-manager.sh
                 echo  "docker swarm join --token $(docker swarm join-token worker -q) $(hostname -i):2377" >> /mnt/volume-docker/join-worker.sh
                 echo  "docker swarm join --token $(docker swarm join-token manager -q) $(hostname -i):2377" >> /mnt/volume-docker/join-manager.sh
+#            - !Ref UserDataAllMgrParam
+#            - !Ref UserDataParam
     DependsOn:
     - FileSystemResource
     - MountTargetResource1
@@ -233,7 +258,9 @@ Resources:
                 mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 /mnt/volume-docker/join-manager.sh
-            - !Ref UserDataParam
+            - !Ref UserDataServiceParam
+#            - !Ref UserDataAllMgrParam
+#            - !Ref UserDataParam
     DependsOn:
     - FileSystemResource
     - MountTargetResource1
@@ -276,6 +303,8 @@ Resources:
                 mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 /mnt/volume-docker/join-manager.sh
+#            - !Ref UserDataAllMgrParam
+#            - !Ref UserDataParam
     DependsOn:
     - FileSystemResource
     - MountTargetResource1
@@ -318,6 +347,8 @@ Resources:
                 mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 /mnt/volume-docker/join-worker.sh
+#            - !Ref UserDataAllWorkersParam
+#            - !Ref UserDataParam
     DependsOn:
     - FileSystemResource
     - MountTargetResource1
@@ -360,6 +391,8 @@ Resources:
                 mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 /mnt/volume-docker/join-worker.sh
+#            - !Ref UserDataAllWorkersParam
+#            - !Ref UserDataParam
     DependsOn:
     - FileSystemResource
     - MountTargetResource1
@@ -402,6 +435,8 @@ Resources:
                 mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 /mnt/volume-docker/join-worker.sh
+#            - !Ref UserDataAllWorkersParam
+#            - !Ref UserDataParam
     DependsOn:
     - FileSystemResource
     - MountTargetResource1

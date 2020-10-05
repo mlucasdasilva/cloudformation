@@ -1,0 +1,42 @@
+
+
+Refs:
+https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config_manage-rules.html
+
+
+--no-paginate (boolean)
+
+Disable automatic pagination.
+
+--output (string)
+json
+text
+table
+
+aws configservice describe-config-rules
+aws configservice describe-config-rules --query "ConfigRules[].ConfigRuleName"
+aws --output json configservice describe-config-rules --query "ConfigRules[].ConfigRuleName"
+aws --output text configservice describe-config-rules --query "ConfigRules[].ConfigRuleName"
+aws configservice describe-config-rules | grep ConfigRuleName
+aws --output text configservice describe-config-rules --query "ConfigRules[].ConfigRuleName" | while read a ; do  b=( $a ) ; echo ${b[1]} ; done
+
+aws --output text configservice describe-config-rules --query "ConfigRules[].ConfigRuleName" | while read a ; do  b=( $a ) ; for i in "${b[@]}"; do echo "$i"; done ; done
+
+for i in "${my_array[@]}"; do echo "$i"; done
+
+aws configservice delete-config-rule --config-rule-name ConfigRuleName
+
+aws ec2 describe-instances --filters "Name=instance-type,Values=t2.micro" --query "Reservations[].Instances[].InstanceId"
+aws ec2 describe-instances --query "Reservations[].Instances[].InstanceId"
+
+
+aws --output text configservice describe-config-rules --query "ConfigRules[].ConfigRuleName" | while read a ; do  b=( $a ) ; for i in "${b[@]}"; do echo "$i"; aws configservice delete-config-rule --config-rule-name $i ; done ; done
+
+
+aws configservice describe-config-rules | grep ConfigRuleName | gawk &amp;#39;match($0, /:.+"(.+)"/, a) {print a[1]}&amp;#39; | while read rule_name; 
+do 
+	echo $rule_name; 
+	aws configservice delete-config-rule --config-rule-name $rule_name
+done
+
+

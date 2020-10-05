@@ -25,6 +25,17 @@ Mappings:
       - "chmod +x /usr/local/bin/docker-compose \n"
       - "yum install -y git \n"
 
+##!/bin/bash -xe
+#exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+#yum update -y
+#amazon-linux-extras install -y docker
+#service docker start
+#systemctl enable docker
+#usermod -a -G docker ec2-user
+#curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+#chmod +x /usr/local/bin/docker-compose
+#yum install -y git
+
   UserData02:
     Script01:
       ScriptList:
@@ -133,6 +144,7 @@ Resources:
                 ln -s /usr/local/bin/aws /usr/bin/aws
                 aws --version
 #                docker swarm init --advertise-addr ${AwsLinux2DockerInstance1.PrivateIp}
+#                docker service create --name mynginx -p 80:80 nginx
             - !Ref UserDataParam
 
 
