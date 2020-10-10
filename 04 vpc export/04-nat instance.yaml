@@ -1,0 +1,183 @@
+######################
+# INCOMPLETO
+######################
+
+
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  NAT INSTANCE
+
+
+
+######################
+# Mappings section
+######################
+
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe \n"
+      - "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 \n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y docker \n"
+      - "service docker start \n"
+      - "systemctl enable docker \n"
+      - "usermod -a -G docker ec2-user \n"
+      - 'curl -L '
+      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+        -s)-$(uname -m)"'
+      - " -o /usr/local/bin/docker-compose \n"
+      - "chmod +x /usr/local/bin/docker-compose \n"
+      - "yum install -y git \n"
+
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsLinux2DockerParam:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+
+  UserDataServiceParam:
+    Description: >-
+      Commands to be executed once in just one master.
+    Type: String
+    MinLength: 1
+    MaxLength: 1024
+    Default: docker service create --name mynginx -p 80:80 nginx
+
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+
+
+  NAT1EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId:
+        Ref: NAT1
+  NAT1:
+    Type: AWS::EC2::Instance
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegionArchNatAMI
+        - Ref: AWS::Region
+        - Fn::FindInMap:
+          - AWSInstanceType2Arch
+          - Ref: NATInstanceType
+          - Arch
+      InstanceType:
+        Ref: NATInstanceType
+      Tags:
+      - Key: Name
+        Value: NAT1
+      NetworkInterfaces:
+      - GroupSet:
+        - Ref: NATSecurityGroup
+        AssociatePublicIpAddress: 'true'
+        DeviceIndex: '0'
+        DeleteOnTermination: 'true'
+        SubnetId:
+          Ref: PublicSubnetAZ1
+      KeyName:
+        Ref: KeyPairName
+      SourceDestCheck: 'false'
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId:
+        Ref: NAT1
+
+
+  AwsLinux2DockerInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                docker swarm init --advertise-addr eth0
+                yum install -y amazon-efs-utils
+                mkdir /mnt/volume-docker
+                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                echo  "#!/bin/bash" > /mnt/volume-docker/join-worker.sh
+                echo  "#!/bin/bash" > /mnt/volume-docker/join-manager.sh
+                chmod 775 /mnt/volume-docker/join-worker.sh
+                chmod 775 /mnt/volume-docker/join-manager.sh
+                echo  "docker swarm join --token $(docker swarm join-token worker -q) $(hostname -i):2377" >> /mnt/volume-docker/join-worker.sh
+                echo  "docker swarm join --token $(docker swarm join-token manager -q) $(hostname -i):2377" >> /mnt/volume-docker/join-manager.sh
+#            - !Ref UserDataAllMgrParam
+#            - !Ref UserDataParam
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+
+
+  AwsLinux2Docker1PrivateIP:
+    Description: IP of the Docker-01 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance1.PrivateIp

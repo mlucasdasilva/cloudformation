@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  EC2 Instance Centos7-01. Use user 'centos' with key-pait to access the instance with sudo permission 
+
+# This template creates:
+#   Amazon EC2 instance
+#   Security Group
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+#    Default: lab-network
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiCentos7Param:
+    Description: Select Centos7-minimal AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-0083662ba17882949
+    ConstraintDescription: must be the ID of an existing AMI.
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  Centos7Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiCentos7Param
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Centos7-Node-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash -ex
+          yum -y update
+          yum install -y telnet
+          mkdir /storage
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  Centos7Instance1:
+    Description: URL of the Centos7 Instance
+    Value: !Sub 'http://${Centos7Instance1.PublicDnsName}'
