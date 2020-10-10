@@ -1,0 +1,13 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Import test",
+    "Resources": {
+         "Instance1":{
+           "Type":"AWS::EC2::Instance",
+           "DeletionPolicy": "Retain",
+           "Properties":{
+              "InstanceId":"i-0d16532d6fe5bf804"
+           }
+        }
+    }
+}
