@@ -92,6 +92,10 @@ Resources:
           SubnetId:
             Fn::ImportValue:
               !Sub ${NetworkStackName}-SubnetID
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sda1"
+        Ebs:
+          DeleteOnTermination: true
       UserData:
         Fn::Base64:
           Fn::Join:
@@ -110,7 +114,7 @@ Resources:
     Type: AWS::EC2::Volume
     DeletionPolicy: Delete
     Properties:
-      Size: 100
+      Size: 10
 #      AvailabilityZone: !GetAtt Centos7Instance1.AvailabilityZone
       AvailabilityZone:
         Fn::ImportValue:
@@ -146,6 +150,10 @@ Resources:
           SubnetId:
             Fn::ImportValue:
               !Sub ${NetworkStackName}-SubnetID
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sda1"
+        Ebs:
+          DeleteOnTermination: true
       UserData:
         Fn::Base64:
           Fn::Join:
@@ -164,7 +172,7 @@ Resources:
     Type: AWS::EC2::Volume
     DeletionPolicy: Delete
     Properties:
-      Size: 100
+      Size: 10
 #      AvailabilityZone: !GetAtt Centos7Instance2.AvailabilityZone
       AvailabilityZone:
         Fn::ImportValue:
@@ -200,6 +208,10 @@ Resources:
           SubnetId:
             Fn::ImportValue:
               !Sub ${NetworkStackName}-SubnetID
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sda1"
+        Ebs:
+          DeleteOnTermination: true
       UserData:
         Fn::Base64:
           Fn::Join:
@@ -218,7 +230,7 @@ Resources:
     Type: AWS::EC2::Volume
     DeletionPolicy: Delete
     Properties:
-      Size: 100
+      Size: 10
 #      AvailabilityZone: !GetAtt Centos7Instance3.AvailabilityZone
       AvailabilityZone:
         Fn::ImportValue:

@@ -62,6 +62,10 @@ Resources:
           SubnetId:
             Fn::ImportValue:
               !Sub ${NetworkStackName}-SubnetID
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sda1"
+        Ebs:
+          DeleteOnTermination: true
       UserData: 
         Fn::Base64: !Sub |
           #!/bin/bash -ex
