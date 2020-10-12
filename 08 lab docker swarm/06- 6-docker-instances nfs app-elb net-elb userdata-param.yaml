@@ -1,0 +1,648 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Application Template: This template provisions 6 EC2 docker instance in a VPC Subnet provisioned in a different stack.
+
+
+
+######################
+# Mappings section
+######################
+
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe \n"
+      - "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 \n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y docker \n"
+      - "service docker start \n"
+      - "systemctl enable docker \n"
+      - "usermod -a -G docker ec2-user \n"
+      - 'curl -L '
+      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+        -s)-$(uname -m)"'
+      - " -o /usr/local/bin/docker-compose \n"
+      - "chmod +x /usr/local/bin/docker-compose \n"
+      - "yum install -y git \n"
+
+  UserData02:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe \n"
+      - "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 \n"
+      - "yum update -y 1>>/var/log/user-data.log 2>>/var/log/user-data-err.log \n"
+      - "amazon-linux-extras install -y docker  1>>/var/log/user-data.log 2>>/var/log/user-data-err.log \n"
+      - "service docker start  1>>/var/log/user-data.log 2>>/var/log/user-data-err.log \n"
+      - "systemctl enable docker  1>>/var/log/user-data.log 2>>/var/log/user-data-err.log \n"
+      - "usermod -a -G docker ec2-user  1>>/var/log/user-data.log 2>>/var/log/user-data-err.log \n"
+      - 'curl -L '
+      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+        -s)-$(uname -m)"'
+      - " -o /usr/local/bin/docker-compose  1>>/var/log/user-data.log 2>>/var/log/user-data-err.log \n"
+      - "chmod +x /usr/local/bin/docker-compose  1>>/var/log/user-data.log 2>>/var/log/user-data-err.log \n"
+      - "yum install -y git  1>>/var/log/user-data.log 2>>/var/log/user-data-err.log \n"
+
+
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsLinux2DockerParam:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+
+  UserDataServiceParam:
+    Description: >-
+      Commands to be executed once in just one master.
+    Type: String
+    MinLength: 1
+    MaxLength: 1024
+    Default: mkdir /mnt/volume-docker/mysql ; docker service create -p 3000:3306 --mount=type=bind,source=/mnt/volume-docker/mysql,destination=/var/lib/mysql  --name mysqlteste -e MYSQL_ROOT_PASSWORD=admin@1234 mysql:5.7 ; docker  service create -p 80:8080 --name adminerteste adminer
+
+#  UserDataParam:
+#    Description: >-
+#      Commands to be added to user data script.
+#    Type: String
+#    MinLength: 1
+#    MaxLength: 1024
+#    Default: docker service create --name mynginx -p 80:80 nginx
+#
+#    UserDataAllMgrParam:
+#    Description: >-
+#      Commands to be added to manager nodes user data script.
+#    Type: String
+#    MinLength: 1
+#    MaxLength: 1024
+#    Default: echo "no additional user data commands to manager nodes"
+#
+#  UserDataAllWorkersParam:
+#    Description: >-
+#      Commands to be added to worker nodes user data script.
+#    Type: String
+#    MinLength: 1
+#    MaxLength: 1024
+#    Default: echo "no additional user data commands to worker nodes"
+
+  NetELBPortParam:
+    Description: >-
+      Network ELB port to be configured
+    Type: String
+    MinLength: 1
+    MaxLength: 6
+    Default: 3000
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+
+  AppELB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Subnets:
+        - 'Fn::ImportValue': !Sub '${NetworkStackName}-PrivateSubnet1ID'
+        - 'Fn::ImportValue': !Sub '${NetworkStackName}-PrivateSubnet2ID'
+      Scheme: internet-facing # or internal
+      SecurityGroups:
+      - Fn::ImportValue:
+         !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+
+  ListenerELB:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      LoadBalancerArn: !Ref AppELB
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroupELB
+      Port: '80'
+      Protocol: HTTP
+
+  TargetGroupELB:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: TargetGroupELB
+      HealthCheckIntervalSeconds: 10
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-VPCID
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: '20'
+      Targets:
+        - Id:
+            Ref: AwsLinux2DockerInstance1
+          Port: 80
+        - Id: !Ref AwsLinux2DockerInstance2
+          Port: 80
+        - Id: !Ref AwsLinux2DockerInstance3
+          Port: 80
+        - Id: !Ref AwsLinux2DockerInstance4
+          Port: 80
+        - Id: !Ref AwsLinux2DockerInstance5
+          Port: 80
+        - Id: !Ref AwsLinux2DockerInstance6
+          Port: 80
+      Tags:
+      - Key: Name
+        Value: TargetGroupELB
+      - Key: Port
+        Value: 80
+    DependsOn:
+    - AwsLinux2DockerInstance1
+    - AwsLinux2DockerInstance2
+    - AwsLinux2DockerInstance3
+    - AwsLinux2DockerInstance4
+    - AwsLinux2DockerInstance5
+    - AwsLinux2DockerInstance6
+
+
+  NetELB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Type: network
+      Subnets:
+        - 'Fn::ImportValue': !Sub '${NetworkStackName}-PrivateSubnet1ID'
+        - 'Fn::ImportValue': !Sub '${NetworkStackName}-PrivateSubnet2ID'
+      Scheme: internet-facing # or internal
+
+  ListenerNetELB:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      LoadBalancerArn: !Ref NetELB
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroupNetELB
+      Port: !Ref NetELBPortParam
+      Protocol: TCP
+
+  TargetGroupNetELB:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: TargetGroupNetELB
+      HealthCheckIntervalSeconds: 10
+      HealthCheckProtocol: TCP
+      # Health check healthy threshold and unhealthy threshold must be the same for target groups with the TCP protocol
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 5
+      Port: !Ref NetELBPortParam
+      Protocol: TCP
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-VPCID
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: '20'
+      Targets:
+        - Id:
+            Ref: AwsLinux2DockerInstance1
+          Port: !Ref NetELBPortParam
+        - Id: !Ref AwsLinux2DockerInstance2
+          Port: !Ref NetELBPortParam
+        - Id: !Ref AwsLinux2DockerInstance3
+          Port: !Ref NetELBPortParam
+        - Id: !Ref AwsLinux2DockerInstance4
+          Port: !Ref NetELBPortParam
+        - Id: !Ref AwsLinux2DockerInstance5
+          Port: !Ref NetELBPortParam
+        - Id: !Ref AwsLinux2DockerInstance6
+          Port: !Ref NetELBPortParam
+      Tags:
+      - Key: Name
+        Value: TargetGroupNetELB
+      - Key: Port
+        Value: !Ref NetELBPortParam
+    DependsOn:
+    - AwsLinux2DockerInstance1
+    - AwsLinux2DockerInstance2
+    - AwsLinux2DockerInstance3
+    - AwsLinux2DockerInstance4
+    - AwsLinux2DockerInstance5
+    - AwsLinux2DockerInstance6
+
+
+
+
+
+
+
+
+  FileSystemResource:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      BackupPolicy:
+        Status: DISABLED
+#      PerformanceMode: maxIO
+      PerformanceMode: generalPurpose
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_30_DAYS
+      FileSystemTags:
+        - Key: Name
+          Value: TestFileSystem
+#      FileSystemPolicy:
+#        Version: "2012-10-17"
+#        Statement:
+#          - Effect: "Allow"
+#            Action:
+#              - "elasticfilesystem:ClientMount"
+#            Principal: 'arn:aws:iam::111122223333:root'
+  MountTargetResource1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+#      SubnetId: !Ref MountTargetSubnetOne
+      SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      SecurityGroups:
+#      - !GetAtt MountTargetVPC.DefaultSecurityGroup
+      - Fn::ImportValue:
+           !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+  MountTargetResource2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+#      SubnetId: !Ref MountTargetSubnetTwo
+      SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      SecurityGroups:
+#      - !GetAtt MountTargetVPC.DefaultSecurityGroup
+      - Fn::ImportValue:
+           !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+#  AccessPointResource:
+#    Type: 'AWS::EFS::AccessPoint'
+#    Properties:
+#      FileSystemId: !Ref FileSystemResource
+#      PosixUser:
+#        Uid: "13234"
+#        Gid: "1322"
+#        SecondaryGids:
+#          - "1344"
+#          - "1452"
+#      RootDirectory:
+#        CreationInfo:
+#          OwnerGid: "708798"
+#          OwnerUid: "7987987"
+#          Permissions: "0755"
+#        Path: "/testcfn/abc"
+
+  AwsLinux2DockerInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                docker swarm init --advertise-addr eth0
+                yum install -y amazon-efs-utils
+                mkdir /mnt/volume-docker
+                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                echo  "#!/bin/bash" > /mnt/volume-docker/join-worker.sh
+                echo  "#!/bin/bash" > /mnt/volume-docker/join-manager.sh
+                chmod 775 /mnt/volume-docker/join-worker.sh
+                chmod 775 /mnt/volume-docker/join-manager.sh
+                echo  "docker swarm join --token $(docker swarm join-token worker -q) $(hostname -i):2377" >> /mnt/volume-docker/join-worker.sh
+                echo  "docker swarm join --token $(docker swarm join-token manager -q) $(hostname -i):2377" >> /mnt/volume-docker/join-manager.sh
+#            - !Ref UserDataAllMgrParam
+#            - !Ref UserDataParam
+    DependsOn:
+    - FileSystemResource
+    - MountTargetResource1
+    - MountTargetResource2
+
+  AwsLinux2DockerInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-02
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                yum install -y amazon-efs-utils
+                mkdir /mnt/volume-docker
+                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                /mnt/volume-docker/join-manager.sh
+            - !Ref UserDataServiceParam
+#            - !Ref UserDataAllMgrParam
+#            - !Ref UserDataParam
+    DependsOn:
+    - FileSystemResource
+    - MountTargetResource1
+    - MountTargetResource2
+    - AwsLinux2DockerInstance1
+
+  AwsLinux2DockerInstance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-03
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                yum install -y amazon-efs-utils
+                mkdir /mnt/volume-docker
+                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                /mnt/volume-docker/join-manager.sh
+#            - !Ref UserDataAllMgrParam
+#            - !Ref UserDataParam
+    DependsOn:
+    - FileSystemResource
+    - MountTargetResource1
+    - MountTargetResource2
+    - AwsLinux2DockerInstance1
+
+  AwsLinux2DockerInstance4:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-04
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                yum install -y amazon-efs-utils
+                mkdir /mnt/volume-docker
+                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                /mnt/volume-docker/join-worker.sh
+#            - !Ref UserDataAllWorkersParam
+#            - !Ref UserDataParam
+    DependsOn:
+    - FileSystemResource
+    - MountTargetResource1
+    - MountTargetResource2
+    - AwsLinux2DockerInstance1
+
+  AwsLinux2DockerInstance5:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-05
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                yum install -y amazon-efs-utils
+                mkdir /mnt/volume-docker
+                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                /mnt/volume-docker/join-worker.sh
+#            - !Ref UserDataAllWorkersParam
+#            - !Ref UserDataParam
+    DependsOn:
+    - FileSystemResource
+    - MountTargetResource1
+    - MountTargetResource2
+    - AwsLinux2DockerInstance1
+
+  AwsLinux2DockerInstance6:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-06
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                yum install -y amazon-efs-utils
+                mkdir /mnt/volume-docker
+                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                /mnt/volume-docker/join-worker.sh
+#            - !Ref UserDataAllWorkersParam
+#            - !Ref UserDataParam
+    DependsOn:
+    - FileSystemResource
+    - MountTargetResource1
+    - MountTargetResource2
+    - AwsLinux2DockerInstance1
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+
+  FileSystem:
+    Description: ID of the EFS File System
+    Value: !GetAtt FileSystemResource.FileSystemId
+
+  AwsLinux2Docker1PrivateIP:
+    Description: IP of the Docker-01 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance1.PrivateIp
+  AwsLinux2Docker2PrivateIP:
+    Description: IP of the Docker-02 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance2.PrivateIp
+  AwsLinux2Docker3PrivateIP:
+    Description: IP of the Docker-01 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance3.PrivateIp
+  AwsLinux2Docker4PrivateIP:
+    Description: IP of the Docker-02 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance4.PrivateIp
+  AwsLinux2Docker5PrivateIP:
+    Description: IP of the Docker-01 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance5.PrivateIp
+  AwsLinux2Docker6PrivateIP:
+    Description: IP of the Docker-02 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance6.PrivateIp
+
+  AwsLinux2Docker1URL:
+    Description: URL of the Docker-01 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance1.PublicDnsName}'
+  AwsLinux2Docker2URL:
+    Description: URL of the Docker-02 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance2.PublicDnsName}'
+  AwsLinux2Docker3URL:
+    Description: URL of the Docker-03 in Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance3.PublicDnsName}'
+  AwsLinux2Docker4URL:
+    Description: URL of the Docker-04 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance4.PublicDnsName}'
+  AwsLinux2Docker5URL:
+    Description: URL of the Docker-05 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance5.PublicDnsName}'
+  AwsLinux2Docker6URL:
+    Description: URL of the Docker-06 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance6.PublicDnsName}'
+
+  AppElbURL:
+    Description: URL of Application Elastic Load Balancer
+    Value: !Sub 'http://${AppELB.DNSName}'
+  NetElbURL:
+    Description: URL of Network Elastic Load Balancer
+    Value: !Sub 'http://${NetELB.DNSName}'
