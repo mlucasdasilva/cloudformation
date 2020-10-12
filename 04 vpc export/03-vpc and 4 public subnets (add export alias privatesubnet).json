@@ -329,6 +329,7 @@
         ]
       }
     },
+
     "PublicSubnet1DefaultReference": {
       "Description": "A default name reference to the public subnet in the 1st Availability Zone",
       "Value": {
@@ -338,6 +339,17 @@
          "Name": { "Fn::Sub": "${AWS::StackName}-SubnetID" }
       }
     },
+    "PublicSubnet1AZDefaultReference": {
+      "Description": "A default name reference to the AZ of the public subnet in the 1st Availability Zone",
+      "Value": {
+        "Fn::GetAtt" : "PublicSubnet1.AvailabilityZone"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-AZID" }
+      }
+    },
+
+
     "PublicSubnet1": {
       "Description": "A reference to the public subnet in the 1st Availability Zone",
       "Value": {
@@ -392,6 +404,64 @@
          "Name": { "Fn::Sub": "${AWS::StackName}-PrivateSubnet2ID" }
       }
     },
+
+
+    "PublicSubnet1AZ": {
+      "Description": "A reference to the public subnet in the 1st Availability Zone",
+      "Value": {
+        "Fn::GetAtt" : "PublicSubnet1.AvailabilityZone"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-PublicSubnet1AZID" }
+      }
+    },
+    "PublicSubnet2AZ": {
+      "Description": "A reference to the public subnet in the 2nd Availability Zone",
+      "Value": {
+        "Fn::GetAtt" : "PublicSubnet2.AvailabilityZone"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-PublicSubnet2AZID" }
+      }
+    },
+    "PublicSubnet3AZ": {
+      "Description": "A reference to the public subnet in the 3rd Availability Zone",
+      "Value": {
+        "Fn::GetAtt" : "PrivateSubnet1.AvailabilityZone"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-PublicSubnet3AZID" }
+      }
+    },
+    "PublicSubnet4AZ": {
+      "Description": "A reference to the public subnet in the 4th Availability Zone",
+      "Value": {
+        "Fn::GetAtt" : "PrivateSubnet2.AvailabilityZone"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-PublicSubnet4AZID" }
+      }
+    },
+    "PrivateSubnet1AZ": {
+      "Description": "A private subnet name reference to the public subnet in the 3rd Availability Zone",
+      "Value": {
+        "Fn::GetAtt" : "PrivateSubnet1.AvailabilityZone"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-PrivateSubnet1AZID" }
+      }
+    },
+    "PrivateSubnet2AZ": {
+      "Description": "A private subnet name refrence to the public subnet in the 3rd Availability Zone",
+      "Value": {
+        "Fn::GetAtt" : "PrivateSubnet2.AvailabilityZone"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-PrivateSubnet2AZID" }
+      }
+    },
+
+
     "NoIngressSecurityGroup": {
       "Description": "Security group with no ingress rule",
       "Value": {
