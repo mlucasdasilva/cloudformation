@@ -1,0 +1,261 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  EC2 Instance Centos7-01 with additional EBS. Use user 'centos' with key-pait to access the instance with sudo permission 
+
+
+
+######################
+# Mappings section
+######################
+
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+        - |
+          #!/bin/bash -ex
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 
+          yum -y update
+          yum install -y telnet
+          yum install  -y wget centos-release-gluster  epel-release
+          yum install  -y glusterfs-server
+          systemctl stop firewalld
+          systemctl disable firewalld
+          systemctl start glusterd
+          systemctl enable glusterd
+          # create ext4 filesystem on new volume
+          sleep 10
+          mkfs -t ext4 /dev/xvdh
+          # create mount point directory
+          mkdir /storage
+          chattr -i /storage
+          # add an entry to fstab to mount volume during boot
+          echo "/dev/xvdh    /storage   ext4    defaults,nofail 0 2" >> /etc/fstab
+          # mount the volume on current boot
+          mount -a
+          mkdir /storage/brick1
+          mkdir /storage/brick1/gv0
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+#    Default: lab-network
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiCentos7Param:
+    Description: Select Centos7-minimal AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-0083662ba17882949
+    ConstraintDescription: must be the ID of an existing AMI.
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  Centos7Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiCentos7Param
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Centos7-Node-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                echo "fim"
+    DependsOn:
+    - DiskVolume1
+  DiskVolume1:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 100
+#      AvailabilityZone: !GetAtt Centos7Instance1.AvailabilityZone
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Centos7-Node-01-Data
+  DiskMountPoint1:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref Centos7Instance1
+      VolumeId: !Ref DiskVolume1
+      Device: /dev/sdh
+
+
+  Centos7Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiCentos7Param
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Centos7-Node-02
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                echo "fim"
+    DependsOn:
+    - DiskVolume2
+  DiskVolume2:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 100
+#      AvailabilityZone: !GetAtt Centos7Instance2.AvailabilityZone
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Centos7-Node-02-Data
+  DiskMountPoint2:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref Centos7Instance2
+      VolumeId: !Ref DiskVolume2
+      Device: /dev/sdh
+
+
+  Centos7Instance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref AmiCentos7Param
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Centos7-Node-03
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-SubnetID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                echo "fim"
+    DependsOn:
+    - DiskVolume3
+  DiskVolume3:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 100
+#      AvailabilityZone: !GetAtt Centos7Instance3.AvailabilityZone
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Centos7-Node-03-Data
+  DiskMountPoint3:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref Centos7Instance3
+      VolumeId: !Ref DiskVolume3
+      Device: /dev/sdh
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  Centos7Instance1:
+    Description: DNS of the Centos7-Node-01
+    Value: !Sub '${Centos7Instance1.PublicDnsName}'
+  Centos7Instance2:
+    Description: DNS of the Centos7-Node-02
+    Value: !Sub '${Centos7Instance2.PublicDnsName}'
+  Centos7Instance3:
+    Description: DNS of the Centos7-Node-03
+    Value: !Sub '${Centos7Instance3.PublicDnsName}'
+  Centos7Instance1IP:
+    Description: Private IP of the Centos7-Node-01
+    Value: !GetAtt Centos7Instance1.PrivateIp
+  Centos7Instance2IP:
+    Description: Private IP of the Centos7-Node-02
+    Value: !GetAtt Centos7Instance2.PrivateIp
+  Centos7Instance3IP:
+    Description: Private IP of the Centos7-Node-03
+    Value: !GetAtt Centos7Instance3.PrivateIp
+
