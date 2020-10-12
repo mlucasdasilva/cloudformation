@@ -68,7 +68,6 @@ Resources:
           exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 
           yum -y update
           yum install -y telnet
-          mkdir /storage
           yum install  -y wget centos-release-gluster  epel-release
           yum install  -y glusterfs-server
           systemctl stop firewalld
