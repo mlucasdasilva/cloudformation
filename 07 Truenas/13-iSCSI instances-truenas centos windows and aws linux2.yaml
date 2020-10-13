@@ -89,7 +89,8 @@ Resources:
       Tags:
         - Key: Name
           Value: TrueNAS Data
-  
+    DeletionPolicy: Delete
+
   DiskMountPoint:
     Type: AWS::EC2::VolumeAttachment
     Properties:

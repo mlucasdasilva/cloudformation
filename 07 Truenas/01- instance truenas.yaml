@@ -101,8 +101,9 @@ Resources:
       Tags:
         - Key: Name
           Value: Web Data
-    DeletionPolicy: Snapshot
-  
+    #DeletionPolicy: Snapshot
+    DeletionPolicy: Delete
+
   DiskMountPoint:
     Type: AWS::EC2::VolumeAttachment
     Properties:
