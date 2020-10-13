@@ -645,4 +645,4 @@ Outputs:
     Value: !Sub 'http://${AppELB.DNSName}'
   NetElbURL:
     Description: URL of Network Elastic Load Balancer
-    Value: !Sub 'http://${NetELB.DNSName}'
+    Value: !Sub '${NetELB.DNSName}:${NetELBPortParam}'
