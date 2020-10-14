@@ -24,31 +24,11 @@ Parameters:
 #    Default: lab-network
     Default: MyCloud
 
-  AmiAWSLinux2Param:
-    Description: Select AWS Linux 2 AMI (x86)
-    Type: AWS::EC2::Image::Id
-    Default: ami-02354e95b39ca8dec
-    ConstraintDescription: must be the ID of an existing AMI.
-
   AmiTrueNasParam:
     Description: Select TrueNAS AMI (x86)
     Type: AWS::EC2::Image::Id
     Default: ami-0b29297d20ee25b3a
     ConstraintDescription: must be the ID of an existing AMI.
-
-  AmiCentos7Param:
-    Description: Select Centos7-minimal AMI (x86)
-    Type: AWS::EC2::Image::Id
-    Default: ami-0083662ba17882949
-    ConstraintDescription: must be the ID of an existing AMI.
-    #ami-02a6c9fa263b1caf6
-
-  AmiWindowsServerParam:
-    Description: Select Windows Server AMI (x86)
-    Type: AWS::EC2::Image::Id
-    Default: ami-02a6c9fa263b1caf6
-    ConstraintDescription: must be the ID of an existing AMI. (defaul ami-02a6c9fa263b1caf6 Windows Server 2019 Base with containers)
-
 
 ######################
 # Resources section
@@ -73,25 +53,13 @@ Resources:
           SubnetId:
             Fn::ImportValue:
               !Sub ${NetworkStackName}-SubnetID
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sda1"
+        Ebs:
+          DeleteOnTermination: true
       Tags:
         - Key: Name
           Value: TrueNas1
-#      UserData: 
-#        Fn::Base64: !Sub |
-#          #!/bin/bash -ex
-#          yum -y install httpd php mysql php-mysql
-#          chkconfig httpd on
-#          service httpd start
-#          if [ ! -f /var/www/html/lab-app.tgz ]; then
-#          cd /var/www/html
-#          wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/CUR-TF-200-ACACAD/studentdownload/lab-app.tgz
-#          tar xvfz lab-app.tgz
-#          chown apache:root /var/www/html/rds.conf.php
-#          fi
-#          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WebServerInstance1 --region ${AWS::Region}
-#    CreationPolicy:
-#      ResourceSignal:
-#        Timeout: PT5M
 
   DiskVolume:
     Type: AWS::EC2::Volume
@@ -100,7 +68,7 @@ Resources:
       AvailabilityZone: !GetAtt TrueNasInstance1.AvailabilityZone
       Tags:
         - Key: Name
-          Value: Web Data
+          Value: TrueNas Data
     #DeletionPolicy: Snapshot
     DeletionPolicy: Delete
 
@@ -114,7 +82,7 @@ Resources:
   AppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Enable HTTP ingress
+      GroupDescription: Enable HTTP and ssh ingress
       VpcId:
         Fn::ImportValue:
           !Sub ${NetworkStackName}-VPCID
