@@ -1,0 +1,186 @@
+---
+Description: Create one ec2 instance aws linux 2
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe\n"
+      - "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 \n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y docker \n"
+      - "service docker start \n"
+      - "systemctl enable docker \n"
+      - "usermod -a -G docker ec2-user \n"
+      - 'curl -L '
+      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+        -s)-$(uname -m)"'
+      - " -o /usr/local/bin/docker-compose \n"
+      - "chmod +x /usr/local/bin/docker-compose \n"
+      - "yum install -y git \n"
+
+Parameters:
+  VpcParam:
+    Description: Name of an existing VPC
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-3e879444
+    ConstraintDescription: must be the ID of an existing VPC.
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  AmiParam:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+  InstanceTypeParam:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+    - t1.micro
+    - t2.nano
+    - t2.micro
+    - t2.small
+    - t2.medium
+    - t2.large
+    - m1.small
+    - m1.medium
+    - m1.large
+    - m1.xlarge
+    - m2.xlarge
+    - m2.2xlarge
+    - m2.4xlarge
+    - m3.medium
+    - m3.large
+    - m3.xlarge
+    - m3.2xlarge
+    - m4.large
+    - m4.xlarge
+    - m4.2xlarge
+    - m4.4xlarge
+    - m4.10xlarge
+    - c1.medium
+    - c1.xlarge
+    - c3.large
+    - c3.xlarge
+    - c3.2xlarge
+    - c3.4xlarge
+    - c3.8xlarge
+    - c4.large
+    - c4.xlarge
+    - c4.2xlarge
+    - c4.4xlarge
+    - c4.8xlarge
+    - g2.2xlarge
+    - g2.8xlarge
+    - r3.large
+    - r3.xlarge
+    - r3.2xlarge
+    - r3.4xlarge
+    - r3.8xlarge
+    - i2.xlarge
+    - i2.2xlarge
+    - i2.4xlarge
+    - i2.8xlarge
+    - d2.xlarge
+    - d2.2xlarge
+    - d2.4xlarge
+    - d2.8xlarge
+    - hi1.4xlarge
+    - hs1.8xlarge
+    - cr1.8xlarge
+    - cc2.8xlarge
+    - cg1.4xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+Resources:
+  SgAllTraffic:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-sgAllTraffic
+      GroupDescription: SG libera todo trafego
+      SecurityGroupIngress:
+      - Description: All traffic inbound ip4 allowed
+        IpProtocol: "-1"
+        CidrIp: 0.0.0.0/0
+        FromPort: '0'
+        ToPort: '65535'
+      - Description: All traffic inbound ip6 allowed
+        IpProtocol: "-1"
+        CidrIpv6: "::/0"
+        FromPort: '0'
+        ToPort: '65535'
+      VpcId:
+        Ref: VpcParam
+  instanciadocker:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-01
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
+      SecurityGroupIds:
+      - Ref: SgAllTraffic
+      ImageId:
+        Ref: AmiParam
+      InstanceType:
+        Ref: InstanceTypeParam
+      KeyName:
+        Ref: KeyNameParam
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                docker swarm init --advertise-addr eth0
+                mkdir /root/.aws
+                cat <<EOF > /root/.aws/credentials
+                [default]
+                aws_access_key_id=ASIAYCHEWJUH7DNZY2SG
+                aws_secret_access_key=8V0MfpkQ498fV/UidJIpmHDZ/xWqQyiZ7O+1hBnP
+                aws_session_token=FwoGZXIvYXdzENj//////////wEaDNpl/joDOE2fFbLUQCK8AcK8JgBkDhFNbqwN28DU1LPqsUrTm3LG8clWLAb9HvFyl9z92onP2h1V9b8XbSbxuZ3lsEUVc76jH6VFb4wPmGPY1770lssGnL/g58Q+paZXvB+DAdesdxz9kLVDoOis6d/kMkaS1FwmM+NM03iNJMG4gDgGTu0bnV6Ju4mVCcWJqSy+JMbtEmhi4cZrht0/fo2/SRFSM27YFmEVzrGL77qN4t3wa9zMUgjnO8s9BU/1RerdjDgtNRcklWB6KLPZufsFMi3TaZhjrxY1PDlWuGf6wnaNRVN3IsCt1uIvxMDrTFQf4TyN739Tn5IQlHhhf1Y=
+                EOF
+                yum remove -y aws-cli
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                unzip awscliv2.zip
+                sudo ./aws/install
+                /usr/local/bin/aws --version
+                ln -s /usr/local/bin/aws /usr/bin/aws
+                aws --version
+                # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install-linux.html
+                # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-getting-started-hello-world.html
+                yum install -y python-pip
+                curl -fsSL "https://raw.githubusercontent.com/Homebrew/install/master/install.sh" -o "install_homebrew.sh"
+                # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+                # su -l ec2-user -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+                # su -l ec2-user -c "test -d ~/.linuxbrew && eval $(~/.linuxbrew/bin/brew shellenv)"
+                # su -l ec2-user -c "test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+                # su -l ec2-user -c "test -r ~/.bash_profile && echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.bash_profile"
+                # su -l ec2-user -c "echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile"
+                # su -l ec2-user -c "brew --version"
+                # brew tap aws/tap
+                # brew install aws-sam-cli
+                # sam --version
+                # brew upgrade aws-sam-cli
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  instanciadocker:
+    Description: DNS of the Instance
+    Value: !Sub 'http://${instanciadocker.PublicDnsName}'
