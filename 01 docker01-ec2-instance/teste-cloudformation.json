@@ -1,0 +1,150 @@
+{
+"Resources" : {
+
+    "instanciadocker01" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+            "Tags" : [ {"Key" : "Name", "Value" : "docker01"} ],
+            "AvailabilityZone" : "us-east-1a",
+            "ImageId" : "ami-02354e95b39ca8dec",
+            "InstanceType"   : "t2.micro",
+            "SecurityGroupIds" : [ "sg-077b478ec1edbeec9" ],
+            "KeyName"        : "conta2-teste",
+            "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                     "#!/bin/bash -xe\n",
+                     "yum update -y \n",
+                     "amazon-linux-extras install -y docker \n",
+                     "service docker start \n",
+                     "systemctl enable docker \n",
+                     "usermod -a -G docker ec2-user \n",
+                     "curl -L " ,
+                     "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"" ,
+                     " -o /usr/local/bin/docker-compose \n",
+                     "chmod +x /usr/local/bin/docker-compose \n"
+                ]]}}
+        }
+    },
+
+    "instanciadocker02" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+            "Tags" : [ {"Key" : "Name", "Value" : "docker02"} ],
+            "AvailabilityZone" : "us-east-1b",
+            "ImageId" : "ami-02354e95b39ca8dec",
+            "InstanceType"   : "t2.micro",
+            "SecurityGroupIds" : [ "sg-077b478ec1edbeec9" ],
+            "KeyName"        : "conta2-teste",
+            "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                     "#!/bin/bash -xe\n",
+                     "yum update -y \n",
+                     "amazon-linux-extras install -y docker \n",
+                     "service docker start \n",
+                     "systemctl enable docker \n",
+                     "usermod -a -G docker ec2-user \n",
+                     "systemctl enable docker \n",
+                     "curl -L " ,
+                     "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"" ,
+                     " -o /usr/local/bin/docker-compose \n",
+                     "chmod +x /usr/local/bin/docker-compose \n"
+                ]]}}
+        }
+    },
+
+    "instanciadocker03" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+            "Tags" : [ {"Key" : "Name", "Value" : "docker03"} ],
+            "AvailabilityZone" : "us-east-1c",
+            "ImageId" : "ami-02354e95b39ca8dec",
+            "InstanceType"   : "t2.micro",
+            "SecurityGroupIds" : [ "sg-077b478ec1edbeec9" ],
+            "KeyName"        : "conta2-teste",
+            "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                     "#!/bin/bash -xe\n",
+                     "yum update -y \n",
+                     "amazon-linux-extras install -y docker \n",
+                     "service docker start \n",
+                     "systemctl enable docker \n",
+                     "usermod -a -G docker ec2-user \n",
+                     "curl -L " ,
+                     "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"" ,
+                     " -o /usr/local/bin/docker-compose \n",
+                     "chmod +x /usr/local/bin/docker-compose \n"
+                ]]}}
+        }
+    },
+
+    "instanciadocker04" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+            "Tags" : [ {"Key" : "Name", "Value" : "docker04"} ],
+            "AvailabilityZone" : "us-east-1d",
+            "ImageId" : "ami-02354e95b39ca8dec",
+            "InstanceType"   : "t2.micro",
+            "SecurityGroupIds" : [ "sg-077b478ec1edbeec9" ],
+            "KeyName"        : "conta2-teste",
+            "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                     "#!/bin/bash -xe\n",
+                     "yum update -y \n",
+                     "amazon-linux-extras install -y docker \n",
+                     "service docker start \n",
+                     "systemctl enable docker \n",
+                     "usermod -a -G docker ec2-user \n",
+                     "curl -L " ,
+                     "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"" ,
+                     " -o /usr/local/bin/docker-compose \n",
+                     "chmod +x /usr/local/bin/docker-compose \n"
+                ]]}}
+        }
+    },
+
+    "instanciadocker05" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+            "Tags" : [ {"Key" : "Name", "Value" : "docker05"} ],
+            "AvailabilityZone" : "us-east-1e",
+            "ImageId" : "ami-02354e95b39ca8dec",
+            "InstanceType"   : "t2.micro",
+            "SecurityGroupIds" : [ "sg-077b478ec1edbeec9" ],
+            "KeyName"        : "conta2-teste",
+            "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                     "#!/bin/bash -xe\n",
+                     "yum update -y \n",
+                     "amazon-linux-extras install -y docker \n",
+                     "service docker start \n",
+                     "systemctl enable docker \n",
+                     "usermod -a -G docker ec2-user \n",
+                     "curl -L " ,
+                     "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"" ,
+                     " -o /usr/local/bin/docker-compose \n",
+                     "chmod +x /usr/local/bin/docker-compose \n"
+                ]]}}
+        }
+    },
+
+    "instanciadocker06" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+            "Tags" : [ {"Key" : "Name", "Value" : "docker06"} ],
+            "AvailabilityZone" : "us-east-1f",
+            "ImageId" : "ami-02354e95b39ca8dec",
+            "InstanceType"   : "t2.micro",
+            "SecurityGroupIds" : [ "sg-077b478ec1edbeec9" ],
+            "KeyName"        : "conta2-teste",
+            "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                     "#!/bin/bash -xe\n",
+                     "yum update -y \n",
+                     "amazon-linux-extras install -y docker \n",
+                     "service docker start \n",
+                     "systemctl enable docker \n",
+                     "usermod -a -G docker ec2-user \n",
+                     "curl -L " ,
+                     "\"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)\"" ,
+                     " -o /usr/local/bin/docker-compose \n",
+                     "chmod +x /usr/local/bin/docker-compose \n"
+                ]]}}
+        }
+    }
+
+}
+}

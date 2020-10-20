@@ -94,6 +94,31 @@ Parameters:
     - cc2.8xlarge
     - cg1.4xlarge
     ConstraintDescription: must be a valid EC2 instance type.
+  AwsAccessKeyId:
+    Description: >-
+      aws_access_key_id
+    Type: String
+    MinLength: 1
+    MaxLength: 1024
+    Default: |
+      ASIAYCHEWJUH7DNZY2SG
+  AwsSecretAccessKey:
+    Description: >-
+      aws_secret_access_key
+    Type: String
+    MinLength: 1
+    MaxLength: 1024
+    Default: |
+      8V0MfpkQ498fV/UidJIpmHDZ/xWqQyiZ7O+1hBnP
+  AwsSessionToken:
+    Description: >-
+      aws_session_token
+    Type: String
+    MinLength: 1
+    MaxLength: 1024
+    Default: |
+      FwoGZXIvYXdzENj//////////wEaDNpl/joDOE2fFbLUQCK8AcK8JgBkDhFNbqwN28DU1LPqsUrTm3LG8clWLAb9HvFyl9z92onP2h1V9b8XbSbxuZ3lsEUVc76jH6VFb4wPmGPY1770lssGnL/g58Q+paZXvB+DAdesdxz9kLVDoOis6d/kMkaS1FwmM+NM03iNJMG4gDgGTu0bnV6Ju4mVCcWJqSy+JMbtEmhi4cZrht0/fo2/SRFSM27YFmEVzrGL77qN4t3wa9zMUgjnO8s9BU/1RerdjDgtNRcklWB6KLPZufsFMi3TaZhjrxY1PDlWuGf6wnaNRVN3IsCt1uIvxMDrTFQf4TyN739Tn5IQlHhhf1Y=
+
 Resources:
   SgAllTraffic:
     Type: AWS::EC2::SecurityGroup
@@ -113,7 +138,7 @@ Resources:
         ToPort: '65535'
       VpcId:
         Ref: VpcParam
-  instanciadocker:
+  InstanciaAws:
     Type: AWS::EC2::Instance
     Properties:
       Tags:
@@ -146,10 +171,18 @@ Resources:
                 mkdir /root/.aws
                 cat <<EOF > /root/.aws/credentials
                 [default]
-                aws_access_key_id=ASIAYCHEWJUH7DNZY2SG
-                aws_secret_access_key=8V0MfpkQ498fV/UidJIpmHDZ/xWqQyiZ7O+1hBnP
-                aws_session_token=FwoGZXIvYXdzENj//////////wEaDNpl/joDOE2fFbLUQCK8AcK8JgBkDhFNbqwN28DU1LPqsUrTm3LG8clWLAb9HvFyl9z92onP2h1V9b8XbSbxuZ3lsEUVc76jH6VFb4wPmGPY1770lssGnL/g58Q+paZXvB+DAdesdxz9kLVDoOis6d/kMkaS1FwmM+NM03iNJMG4gDgGTu0bnV6Ju4mVCcWJqSy+JMbtEmhi4cZrht0/fo2/SRFSM27YFmEVzrGL77qN4t3wa9zMUgjnO8s9BU/1RerdjDgtNRcklWB6KLPZufsFMi3TaZhjrxY1PDlWuGf6wnaNRVN3IsCt1uIvxMDrTFQf4TyN739Tn5IQlHhhf1Y=
+                aws_access_key_id=${AwsAccessKeyId}
+                aws_secret_access_key=${AwsSecretAccessKey}
+                aws_session_token=${AwsSessionToken}
                 EOF
+                mkdir /root/.aws-sam
+                mkdir /home/ec2-user/.aws
+                mkdir /home/ec2-user/.aws-sam
+                cp /root/.aws/credentials  /home/ec2-user/.aws-sam
+                cp /root/.aws/credentials  /home/ec2-user/.aws/credentials
+                cp /root/.aws/credentials  /home/ec2-user/.aws-sam/credentials
+                chown ec2-user -R /home/ec2-user/.aws
+                chown ec2-user -R /home/ec2-user/.aws-sam
                 yum remove -y aws-cli
                 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                 unzip awscliv2.zip
@@ -160,18 +193,20 @@ Resources:
                 # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install-linux.html
                 # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-getting-started-hello-world.html
                 yum install -y python-pip
-                curl -fsSL "https://raw.githubusercontent.com/Homebrew/install/master/install.sh" -o "install_homebrew.sh"
-                # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-                # su -l ec2-user -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+                curl -fsSL "https://raw.githubusercontent.com/Homebrew/install/master/install.sh" -o "/home/ec2-user/install_homebrew.sh"
+                chown ec2-user /home/ec2-user/install_homebrew.sh
+                chmod 775 /home/ec2-user/install_homebrew.sh
+                # su -l ec2-user -c "/home/ec2-user/install_homebrew.sh"
+                ## su -l ec2-user -c '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'
+                ## su -l ec2-user -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
                 # su -l ec2-user -c "test -d ~/.linuxbrew && eval $(~/.linuxbrew/bin/brew shellenv)"
                 # su -l ec2-user -c "test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
                 # su -l ec2-user -c "test -r ~/.bash_profile && echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.bash_profile"
                 # su -l ec2-user -c "echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile"
                 # su -l ec2-user -c "brew --version"
-                # brew tap aws/tap
-                # brew install aws-sam-cli
-                # sam --version
-                # brew upgrade aws-sam-cli
+                # su -l ec2-user -c "brew tap aws/tap"
+                # su -l ec2-user -c "brew install aws-sam-cli"
+                # su -l ec2-user -c "sam --version"
 
 
 
@@ -183,4 +218,4 @@ Outputs:
 
   instanciadocker:
     Description: DNS of the Instance
-    Value: !Sub 'http://${instanciadocker.PublicDnsName}'
+    Value: !Sub 'http://${InstanciaAws.PublicDnsName}'

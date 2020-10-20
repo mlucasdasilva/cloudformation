@@ -322,3 +322,23 @@ https://aws-sam-cli-managed-default-samclisourcebucket-j546x6o7e1hu.s3.amazonaws
 
 
 
+# Remover stack
+
+aws cloudformation delete-stack --stack-name sam-app --region us-east-1
+
+
+
+
+#########################################################################################################################
+#
+# Host your API locally
+#
+#########################################################################################################################
+
+
+sam local start-api
+
+curl http://127.0.0.1:3000/hello
+
+
+
