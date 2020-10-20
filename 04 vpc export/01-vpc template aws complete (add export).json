@@ -1,5 +1,8 @@
 {
   "Description": "This template deploys a VPC, with a pair of public and private subnets spread across two Availability Zones. It deploys an internet gateway, with a default route on the public subnets. It deploys a pair of NAT gateways (one in each AZ), and default routes for them in the private subnets.",
+  
+  
+  
   "Parameters": {
     "EnvironmentName": {
       "Description": "An environment name that is prefixed to resource names",
@@ -14,24 +17,27 @@
     "PublicSubnet1CIDR": {
       "Description": "Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone",
       "Type": "String",
-      "Default": "10.192.10.0/24"
+      "Default": "10.192.0.0/24"
     },
     "PublicSubnet2CIDR": {
       "Description": "Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone",
       "Type": "String",
-      "Default": "10.192.11.0/24"
+      "Default": "10.192.1.0/24"
     },
     "PrivateSubnet1CIDR": {
       "Description": "Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone",
       "Type": "String",
-      "Default": "10.192.20.0/24"
+      "Default": "10.192.2.0/23"
     },
     "PrivateSubnet2CIDR": {
       "Description": "Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone",
       "Type": "String",
-      "Default": "10.192.21.0/24"
+      "Default": "10.192.4.0/23"
     }
   },
+  
+  
+  
   "Resources": {
     "VPC": {
       "Type": "AWS::EC2::VPC",
@@ -361,8 +367,39 @@
           "Ref": "VPC"
         }
       }
+    },
+    "AllTrafficSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": "AllTrafficSg",
+        "GroupDescription": "SG allow all traffic",
+        "SecurityGroupIngress": [
+          {
+            "Description": "All traffic inbound ip4 allowed",
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "0",
+            "ToPort": "65535"
+          },
+          {
+            "Description": "All traffic inbound ip6 allowed",
+            "IpProtocol": "-1",
+            "CidrIpv6": "::/0",
+            "FromPort": "0",
+            "ToPort": "65535"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
     }
   },
+  
+  
+  
+  
+  
   "Outputs": {
     "VPC": {
       "Description": "A reference to the created VPC",
@@ -457,6 +494,15 @@
       },
       "Export": {
          "Name": { "Fn::Sub": "${AWS::StackName}-NoIngressSecurityGroup" }
+      }
+    },
+    "AllTrafficSecurityGroup": {
+      "Description": "Security group with all traffic allowed",
+      "Value": {
+        "Ref": "AllTrafficSecurityGroup"
+      },
+      "Export": {
+         "Name": { "Fn::Sub": "${AWS::StackName}-AllTrafficSecurityGroup" }
       }
     }
   }

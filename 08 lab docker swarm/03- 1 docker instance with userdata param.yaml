@@ -88,7 +88,20 @@ Parameters:
     Type: String
     MinLength: 1
     MaxLength: 1024
-    Default: echo "no additional user data commands"
+    Default: docker service create --name web1 -p 80:80 nginx
+
+  SubnetFromStackName:
+    Description: Subnet from the NetworkStackName export
+    Type: String
+    Default: SubnetID
+    AllowedValues:
+    - PublicSubnet1ID
+    - PublicSubnet2ID
+    - PrivateSubnet1ID
+    - PrivateSubnet2ID
+    - SubnetID
+
+
 
 
 ######################
@@ -116,7 +129,7 @@ Resources:
           DeleteOnTermination: true
           SubnetId:
             Fn::ImportValue:
-              !Sub ${NetworkStackName}-PrivateSubnet1ID
+              !Sub ${NetworkStackName}-${SubnetFromStackName}
       UserData:
         Fn::Base64:
           Fn::Join:
