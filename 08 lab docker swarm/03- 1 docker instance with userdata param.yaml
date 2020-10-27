@@ -101,7 +101,11 @@ Parameters:
     - PrivateSubnet2ID
     - SubnetID
 
-
+  InstanceTypeParam:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.small
+    ConstraintDescription: must be a valid EC2 instance type.
 
 
 ######################
@@ -113,7 +117,7 @@ Resources:
   AwsLinux2DockerInstance1:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: t2.small
+      InstanceType: !Ref InstanceTypeParam
       ImageId: !Ref AmiAwsLinux2DockerParam
       Tags:
         - Key: Name
