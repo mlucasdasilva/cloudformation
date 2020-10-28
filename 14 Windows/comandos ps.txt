@@ -89,6 +89,12 @@ Write-Host "Installing C:\Users\Administrator\vc_redist.x64.exe"
 Start-Process "C:\Users\Administrator\vc_redist.x64.exe"  -Wait -ArgumentList '/q'
 Write-Host "Installing MySQL-Workbench"
 Start-Process msiexec.exe -Wait -ArgumentList '/I "C:\Users\Administrator\mysql-workbench-community-8.0.22-winx64.msi" /q'
+Write-Host "Downloading https://download.mobatek.net/2042020100805218/MobaXterm_Installer_v20.4.zip into C:\Users\Administrator\."
+Invoke-WebRequest -Uri "https://download.mobatek.net/2042020100805218/MobaXterm_Installer_v20.4.zip" -OutFile "C:\Users\Administrator\MobaXterm_Installer_v20.4.zip"
+Write-Host "Expanding Archive zip MobaXterm"
+Expand-Archive -LiteralPath "C:\Users\Administrator\MobaXterm_Installer_v20.4.zip" -DestinationPath "C:\Users\Administrator\MobaXterm"
+Write-Host "Installing MobaXterm"
+Start-Process msiexec.exe -Wait -ArgumentList '/I "C:\Users\Administrator\MobaXterm\MobaXterm_installer_20.4.msi" /q'
 </powershell>
 
 
@@ -111,6 +117,20 @@ Start-Process msiexec.exe -Wait -ArgumentList '/I "C:\Users\Administrator\mysql-
 Start-Process msiexec.exe -Wait -ArgumentList '/I "C:\Users\Administrator\mysql-workbench-community-8.0.22-winx64.msi" '
 
 Start-Process "C:\Users\Administrator\vc_redist.x64.exe"  -Wait -ArgumentList '/q'
+
+
+-------------------------------------------------------------------------
+
+Invoke-WebRequest -Uri "https://download.mobatek.net/2042020100805218/MobaXterm_Installer_v20.4.zip" -OutFile "C:\Users\Administrator\MobaXterm_Installer_v20.4.zip"
+
+Expand-Archive -LiteralPath "C:\Users\Administrator\MobaXterm_Installer_v20.4.zip" -DestinationPath "C:\Users\Administrator\MobaXterm"
+
+Start-Process msiexec.exe -Wait -ArgumentList '/I "C:\Users\Administrator\MobaXterm\MobaXterm_installer_20.4.msi" /q'
+
+
+Expand-Archive "C:\Users\Administrator\MobaXterm_Installer_v20.4.zip"
+
+
 
 -------------------------------------------------------------------------
 

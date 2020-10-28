@@ -1,0 +1,139 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Application Template: This template provisions 6 EC2 windows instance in a VPC Subnet provisioned in a different stack.
+
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsWindowsParam:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-06ba345d99c2958fc
+    ConstraintDescription: must be the ID of an existing AMI.
+
+  UserDataParam:
+    Description: >-
+      Commands to be added to user data script.
+    Type: String
+    MinLength: 1
+    MaxLength: 1024
+    Default: Write-Host "Finish-----------------------------------------------------"
+#    Default: <powershell> Write-Host "Finish" </powershell>
+
+  SubnetFromStackName:
+    Description: Subnet from the NetworkStackName export
+    Type: String
+    Default: SubnetID
+    AllowedValues:
+    - PublicSubnet1ID
+    - PublicSubnet2ID
+    - PrivateSubnet1ID
+    - PrivateSubnet2ID
+    - SubnetID
+
+  InstanceTypeParam:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.small
+    ConstraintDescription: must be a valid EC2 instance type.
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  AwsInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsWindowsParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-${SubnetFromStackName}
+      UserData: 
+        Fn::Base64: !Sub |
+          Fn::Join:
+          - ''
+          - - !Sub |
+                <powershell>
+                Write-Host "-----------------------------------------------------"
+                Write-Host "Logs in C:\ProgramData\Amazon\EC2-Windows\Launch\Log\UserdataExecution.log"
+                Write-Host "Disable Internet Explorer Enhanced Security"
+                function Disable-InternetExplorerESC {
+                   $AdminKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}"
+                   $UserKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}"
+                   Set-ItemProperty -Path $AdminKey -Name "IsInstalled" -Value 0 -Force
+                   Set-ItemProperty -Path $UserKey -Name "IsInstalled" -Value 0 -Force
+                   Rundll32 iesetup.dll, IEHardenLMSettings
+                   Rundll32 iesetup.dll, IEHardenUser
+                   Rundll32 iesetup.dll, IEHardenAdmin
+                   Write-Host "IE Enhanced Security Configuration (ESC) has been disabled."
+                }
+                Disable-InternetExplorerESC
+                Write-Host "Install MySQL-Workbench"
+                Write-Host "Downloading https://aka.ms/vs/16/release/vc_redist.x64.exe into C:\Users\Administrator\vc_redist.x64.exe"
+                Invoke-WebRequest -Uri "https://aka.ms/vs/16/release/vc_redist.x64.exe" -OutFile "C:\Users\Administrator\vc_redist.x64.exe"
+                Write-Host "Downloading https://dev.mysql.com/get/Downloads/MySQLGUITools/mysql-workbench-community-8.0.22-winx64.msi"
+                Invoke-WebRequest -Uri "https://dev.mysql.com/get/Downloads/MySQLGUITools/mysql-workbench-community-8.0.22-winx64.msi" -OutFile "C:\Users\Administrator\mysql-workbench-community-8.0.22-winx64.msi"
+                Write-Host "Installing C:\Users\Administrator\vc_redist.x64.exe"
+                Start-Process "C:\Users\Administrator\vc_redist.x64.exe"  -Wait -ArgumentList '/q'
+                Write-Host "Installing MySQL-Workbench"
+                Start-Process msiexec.exe -Wait -ArgumentList '/I "C:\Users\Administrator\mysql-workbench-community-8.0.22-winx64.msi" /q'
+                Write-Host "Downloading https://download.mobatek.net/2042020100805218/MobaXterm_Installer_v20.4.zip into C:\Users\Administrator\."
+                Invoke-WebRequest -Uri "https://download.mobatek.net/2042020100805218/MobaXterm_Installer_v20.4.zip" -OutFile "C:\Users\Administrator\MobaXterm_Installer_v20.4.zip"
+                Write-Host "Expanding Archive zip MobaXterm"
+                Expand-Archive -LiteralPath "C:\Users\Administrator\MobaXterm_Installer_v20.4.zip" -DestinationPath "C:\Users\Administrator\MobaXterm"
+                Write-Host "Installing MobaXterm"
+                Start-Process msiexec.exe -Wait -ArgumentList '/I "C:\Users\Administrator\MobaXterm\MobaXterm_installer_20.4.msi" /q'
+                ${UserDataParam}
+                </powershell>
+
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  AwsInstance1:
+    Description: Public URL of the Instance
+    Value: !Sub 'http://${AwsInstance1.PublicDnsName}'
+  AwsPrivateIP:
+    Description: Private IP of the Instance
+    Value: !GetAtt AwsInstance1.PrivateIp
