@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Application Template: This template provisions 6 EC2 windows instance in a VPC Subnet provisioned in a different stack.
+
+
+######################
+# Mappings section
+######################
+
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe \n"
+      - "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 \n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y docker \n"
+      - "service docker start \n"
+      - "systemctl enable docker \n"
+      - "usermod -a -G docker ec2-user \n"
+      - 'curl -L '
+      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+        -s)-$(uname -m)"'
+      - " -o /usr/local/bin/docker-compose \n"
+      - "chmod +x /usr/local/bin/docker-compose \n"
+      - "yum install -y git \n"
+
+
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsWindowsParam:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-06ba345d99c2958fc
+    ConstraintDescription: must be the ID of an existing AMI.
+
+  UserDataParam:
+    Description: >-
+      Commands to be added to user data script.
+    Type: String
+    MinLength: 1
+    MaxLength: 1024
+    Default: nao funciona ainda
+
+  SubnetFromStackName:
+    Description: Subnet from the NetworkStackName export
+    Type: String
+    Default: SubnetID
+    AllowedValues:
+    - PublicSubnet1ID
+    - PublicSubnet2ID
+    - PrivateSubnet1ID
+    - PrivateSubnet2ID
+    - SubnetID
+
+  InstanceTypeParam:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.small
+    ConstraintDescription: must be a valid EC2 instance type.
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  AwsInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsWindowsParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-${SubnetFromStackName}
+#      UserData:
+#        Fn::Base64:
+#          Fn::Join:
+#          - ''
+#          - - Fn::Join:
+#              - ''
+#              - Fn::FindInMap:
+#                - UserData
+#                - Script01
+#                - ScriptList
+#            - !Sub |
+#                docker swarm init --advertise-addr eth0
+#                mkdir /root/.aws
+#                cat <<EOF > /root/.aws/credentials
+#                [default]
+#                aws_access_key_id=ASIAYCHEWJUH7DNZY2SG
+#                aws_secret_access_key=8V0MfpkQ498fV/UidJIpmHDZ/xWqQyiZ7O+1hBnP
+#                aws_session_token=FwoGZXIvYXdzENj//////////wEaDNpl/joDOE2fFbLUQCK8AcK8JgBkDhFNbqwN28DU1LPqsUrTm3LG8clWLAb9HvFyl9z92onP2h1V9b8XbSbxuZ3lsEUVc76jH6VFb4wPmGPY1770lssGnL/g58Q+paZXvB+DAdesdxz9kLVDoOis6d/kMkaS1FwmM+NM03iNJMG4gDgGTu0bnV6Ju4mVCcWJqSy+JMbtEmhi4cZrht0/fo2/SRFSM27YFmEVzrGL77qN4t3wa9zMUgjnO8s9BU/1RerdjDgtNRcklWB6KLPZufsFMi3TaZhjrxY1PDlWuGf6wnaNRVN3IsCt1uIvxMDrTFQf4TyN739Tn5IQlHhhf1Y=
+#                EOF
+#                yum remove -y aws-cli
+#                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+#                unzip awscliv2.zip
+#                sudo ./aws/install
+#                /usr/local/bin/aws --version
+#                ln -s /usr/local/bin/aws /usr/bin/aws
+#                aws --version
+##                docker swarm init --advertise-addr ${AwsLinux2DockerInstance1.PrivateIp}
+##                docker service create --name mynginx -p 80:80 nginx
+#            - !Ref UserDataParam
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  AwsInstance1:
+    Description: Public URL of the Instance
+    Value: !Sub 'http://${AwsInstance1.PublicDnsName}'
+  AwsPrivateIP:
+    Description: Private IP of the Instance
+    Value: !GetAtt AwsInstance1.PrivateIp
