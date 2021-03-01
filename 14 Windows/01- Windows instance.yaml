@@ -50,10 +50,10 @@ Parameters:
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
 
   AmiAwsWindowsParam:
-    Description: Select AWS Linux 2 AMI (x86)
+    Description: Select AWS Windows AMI (x86)
     Type: AWS::EC2::Image::Id
-    Default: ami-06ba345d99c2958fc
-    ConstraintDescription: must be the ID of an existing AMI.
+    Default: ami-04578e6adf60e2b3a
+    ConstraintDescription: must be the ID of an existing Windows AMI. Default is Microsoft Windows Server 2016 Base with Containers ami-04578e6adf60e2b3a.
 
   UserDataParam:
     Description: >-
