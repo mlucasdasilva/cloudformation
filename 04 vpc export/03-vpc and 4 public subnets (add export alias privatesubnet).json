@@ -1,5 +1,5 @@
 {
-  "Description": "This template deploys a VPC, with a pair of public spread across two Availability Zones. It deploys an internet gateway, with a default route on the public subnets.",
+  "Description": "This template deploys a VPC, with 2 public subnets and 2 pseudo private subnets spread across two Availability Zones. It deploys an internet gateway, with a default route on the subnets. It does not create Nat Gatways  because this is a simulation env and they would consume more credit. Once we do not have Nat Gatewat, we configure the 2 privete subnets with public ips and public internet access just to simulate the ideal high availble and secured environment with two named public and private subnets spread across two AZ.",
   "Parameters": {
     "EnvironmentName": {
       "Description": "An environment name that is prefixed to resource names",
