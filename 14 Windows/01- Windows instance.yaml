@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Application Template: This template provisions 6 EC2 windows instance in a VPC Subnet provisioned in a different stack.
+  Application Template: This template provisions an EC2 windows instance in a VPC Subnet provisioned in a different stack.
 
 
 ######################
