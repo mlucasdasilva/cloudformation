@@ -1,0 +1,300 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Instance Template: This template provisions an EC2 linux instance in a VPC Subnet provisioned in a different stack.
+
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsParam:
+    Description: Select AWS Centos AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-0083662ba17882949
+    ConstraintDescription: >-
+      Must be the ID of an existing Windows AMI. Default is centos7-minimal-v20190919.0.0 - ami-0083662ba17882949
+      For centos7-minimal-v20190919.0.0  root login is disabled and only the 'centos' user is allowed to connect using ssh public key authentication.
+
+  UserDataParam:
+    Description: >-
+      Commands to be added to user data script.
+    Type: String
+    MinLength: 1
+    MaxLength: 1024
+    Default: echo "Finish-----------------------------------------------------"
+
+  SubnetFromStackName:
+    Description: Subnet from the NetworkStackName export
+    Type: String
+    Default: SubnetID
+    AllowedValues:
+    - PublicSubnet1ID
+    - PublicSubnet2ID
+    - PrivateSubnet1ID
+    - PrivateSubnet2ID
+    - SubnetID
+
+  InstanceTypeParam:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.small
+    ConstraintDescription: must be a valid EC2 instance type.
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  AwsInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsParam
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-${SubnetFromStackName}
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sda1"
+        Ebs:
+          DeleteOnTermination: true
+      UserData: 
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - !Sub |
+                #!/bin/bash -ex
+                exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 
+                yum -y update
+                yum -y install lvm2
+                yum install -y telnet
+                ${UserDataParam}
+#            - !Ref UserDataParam
+
+  DiskVolume1:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+#      AvailabilityZone: !GetAtt AwsInstance1.AvailabilityZone
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol1
+  DiskMountPoint1:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume1
+      Device: /dev/sdh
+
+  DiskVolume2:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol2
+  DiskMountPoint2:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume2
+      Device: xvdi
+
+  DiskVolume3:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol3
+  DiskMountPoint3:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume3
+      Device: xvdk
+
+  DiskVolume4:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol4
+  DiskMountPoint4:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume4
+      Device: xvdm
+
+  DiskVolume5:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol5
+  DiskMountPoint5:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume5
+      Device: xvdp
+
+  DiskVolume6:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol6
+  DiskMountPoint6:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume6
+      Device: xvdq
+
+  DiskVolume7:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol7
+  DiskMountPoint7:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume7
+      Device: xvdr
+
+  DiskVolume8:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol8
+  DiskMountPoint8:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume8
+      Device: xvds
+
+  DiskVolume9:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol9
+  DiskMountPoint9:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume9
+      Device: xvdt
+
+  DiskVolume10:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      Size: 10
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DiskVol10
+  DiskMountPoint10:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref AwsInstance1
+      VolumeId: !Ref DiskVolume10
+      Device: xvdu
+
+
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  AwsInstance1:
+    Description: Public URL of the Instance
+    Value: !Sub 'http://${AwsInstance1.PublicDnsName}'
+  AwsPrivateIP:
+    Description: Private IP of the Instance
+    Value: !GetAtt AwsInstance1.PrivateIp

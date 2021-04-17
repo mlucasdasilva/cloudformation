@@ -1,0 +1,198 @@
+---
+Resources:
+
+# Faixas de IPs para a VPC default e exemplo de subnets
+#
+# VPC ID             IPV4 CDIR
+# ------------     -------------
+# vpc-0fa2bc75     172.31.0.0/16
+# 
+# SUBNET ID           IPV4 CDIR        QTD IPS     Availability Zone
+# ---------------     -------------    -------     -----------------
+# subnet-3aa1c71b     172.31.80.0/20   4091        us-east-1a
+# subnet-962c07db     172.31.16.0/20   4091        us-east-1b
+# subnet-06197d59     172.31.32.0/20   4091        us-east-1c
+# subnet-1cd3487a     172.31.0.0/20    4091        us-east-1d
+# subnet-f56cc3c4     172.31.48.0/20   4091        us-east-1e
+# subnet-34075a3a     172.31.64.0/20   4091        us-east-1f
+#
+#
+# Security group ID      Security group name
+# --------------------   -------------------
+# sg-0fe579ffb9f2d9e88   all-trafic-sg
+#
+# Kei pair
+# -------------
+# aws-2021-1-sd
+#
+
+
+  instanciadocker01:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+      - Key: Name
+        Value: docker01
+      AvailabilityZone: us-east-1a
+      PrivateIpAddress: 172.31.80.21
+      ImageId: ami-02354e95b39ca8dec
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - sg-0fe579ffb9f2d9e88
+      KeyName: aws-2021-1-sd
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "yum update -y \n"
+            - "amazon-linux-extras install -y docker \n"
+            - "service docker start \n"
+            - "systemctl enable docker \n"
+            - "usermod -a -G docker ec2-user \n"
+            - 'curl -L '
+            - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+              -s)-$(uname -m)"'
+            - " -o /usr/local/bin/docker-compose \n"
+            - "chmod +x /usr/local/bin/docker-compose \n"
+  instanciadocker02:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+      - Key: Name
+        Value: docker02
+      AvailabilityZone: us-east-1b
+      PrivateIpAddress: 172.31.16.21
+      ImageId: ami-02354e95b39ca8dec
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - sg-0fe579ffb9f2d9e88
+      KeyName: aws-2021-1-sd
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "yum update -y \n"
+            - "amazon-linux-extras install -y docker \n"
+            - "service docker start \n"
+            - "systemctl enable docker \n"
+            - "usermod -a -G docker ec2-user \n"
+            - "systemctl enable docker \n"
+            - 'curl -L '
+            - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+              -s)-$(uname -m)"'
+            - " -o /usr/local/bin/docker-compose \n"
+            - "chmod +x /usr/local/bin/docker-compose \n"
+  instanciadocker03:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+      - Key: Name
+        Value: docker03
+      AvailabilityZone: us-east-1c
+      PrivateIpAddress: 172.31.32.21
+      ImageId: ami-02354e95b39ca8dec
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - sg-0fe579ffb9f2d9e88
+      KeyName: aws-2021-1-sd
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "yum update -y \n"
+            - "amazon-linux-extras install -y docker \n"
+            - "service docker start \n"
+            - "systemctl enable docker \n"
+            - "usermod -a -G docker ec2-user \n"
+            - 'curl -L '
+            - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+              -s)-$(uname -m)"'
+            - " -o /usr/local/bin/docker-compose \n"
+            - "chmod +x /usr/local/bin/docker-compose \n"
+  instanciadocker04:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+      - Key: Name
+        Value: docker04
+      AvailabilityZone: us-east-1d
+      ImageId: ami-02354e95b39ca8dec
+      PrivateIpAddress: 172.31.0.21
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - sg-0fe579ffb9f2d9e88
+      KeyName: aws-2021-1-sd
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "yum update -y \n"
+            - "amazon-linux-extras install -y docker \n"
+            - "service docker start \n"
+            - "systemctl enable docker \n"
+            - "usermod -a -G docker ec2-user \n"
+            - 'curl -L '
+            - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+              -s)-$(uname -m)"'
+            - " -o /usr/local/bin/docker-compose \n"
+            - "chmod +x /usr/local/bin/docker-compose \n"
+  instanciadocker05:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+      - Key: Name
+        Value: docker05
+      AvailabilityZone: us-east-1e
+      ImageId: ami-02354e95b39ca8dec
+      PrivateIpAddress: 172.31.48.21
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - sg-0fe579ffb9f2d9e88
+      KeyName: aws-2021-1-sd
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "yum update -y \n"
+            - "amazon-linux-extras install -y docker \n"
+            - "service docker start \n"
+            - "systemctl enable docker \n"
+            - "usermod -a -G docker ec2-user \n"
+            - 'curl -L '
+            - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+              -s)-$(uname -m)"'
+            - " -o /usr/local/bin/docker-compose \n"
+            - "chmod +x /usr/local/bin/docker-compose \n"
+  instanciadocker06:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+      - Key: Name
+        Value: docker06
+      AvailabilityZone: us-east-1f
+      ImageId: ami-02354e95b39ca8dec
+      PrivateIpAddress: 172.31.64.21
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - sg-0fe579ffb9f2d9e88
+      KeyName: aws-2021-1-sd
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "yum update -y \n"
+            - "amazon-linux-extras install -y docker \n"
+            - "service docker start \n"
+            - "systemctl enable docker \n"
+            - "usermod -a -G docker ec2-user \n"
+            - 'curl -L '
+            - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
+              -s)-$(uname -m)"'
+            - " -o /usr/local/bin/docker-compose \n"
+            - "chmod +x /usr/local/bin/docker-compose \n"
