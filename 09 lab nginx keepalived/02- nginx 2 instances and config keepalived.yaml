@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Application Template: This template provisions 2 EC2 instances in a VPC Subnet provisioned in a different stack.
+  Application Template: This template provisions 2 EC2 instances in a VPC Subnet provisioned in a different stack. Use the cft '03-vpc and 4 public subnets (add export alias privatesubnet).json' to create the VPC stack
 
 
 ######################
@@ -74,6 +74,7 @@ Resources:
             - Fn::ImportValue:
                 !Sub ${NetworkStackName}-AllTrafficSecurityGroup
           AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.192.13.31
           DeviceIndex: 0
           DeleteOnTermination: true
           SubnetId:
@@ -125,6 +126,10 @@ Resources:
                             auth_type PASS
                             auth_pass 123@admin
                         }
+                        unicast_src_ip 10.192.13.31          #  <------    My IP   - AJUSTAR CONFORME AMBIENTE
+                        unicast_peer {
+                            10.192.14.31                     #  <------    Peer IP - AJUSTAR CONFORME AMBIENTE
+                        }
                         track_script {
                             chk_http_port
                         }
@@ -152,6 +157,7 @@ Resources:
             - Fn::ImportValue:
                 !Sub ${NetworkStackName}-AllTrafficSecurityGroup
           AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.192.14.31
           DeviceIndex: 0
           DeleteOnTermination: true
           SubnetId:
@@ -186,6 +192,10 @@ Resources:
                         authentication {
                             auth_type PASS
                             auth_pass 123@admin
+                        }
+                        unicast_src_ip 10.192.14.31          #  <------   My IP  - AJUSTAR CONFORME AMBIENTE
+                        unicast_peer {
+                            10.192.13.31                     #  <------   Peer IP - AJUSTAR CONFORME AMBIENTE
                         }
                         track_script {
                             chk_http_port
