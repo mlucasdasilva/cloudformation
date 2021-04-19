@@ -1,5 +1,5 @@
 
-Description:  This template deploys a VPC, with public subnets spread
+Description:  This template deploys a VPC, with a pair of public spread
   across two Availability Zones. It deploys an internet gateway, with a default
   route on the public subnets.
 
@@ -22,7 +22,7 @@ Mappings:
     ServerType01:
       id: ami-02354e95b39ca8dec
 
-  UserData:
+  UserData2:
     Script01:
       ScriptList:
       - "#!/bin/bash -xe\n"
@@ -36,6 +36,48 @@ Mappings:
         -s)-$(uname -m)"'
       - " -o /usr/local/bin/docker-compose \n"
       - "chmod +x /usr/local/bin/docker-compose \n"
+
+  UserData:
+    Script01:
+      ScriptList:
+        - |
+          #!/bin/bash -ex
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 
+          yum -y update
+          yum install -y nc telnet
+          amazon-linux-extras install -y docker
+          service docker start
+          systemctl enable docker
+          usermod -a -G docker ec2-user
+          curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          mkdir -p /etc/docker
+          cat  <<EOF > /etc/docker/daemon.json
+          {"hosts": ["tcp://0.0.0.0:2375", "unix:///var/run/docker.sock"]}
+          EOF
+          mkdir -p /etc/systemd/system/docker.service.d
+          cat  <<EOF > /etc/systemd/system/docker.service.d/override.conf
+          [Service]
+          ExecStart=
+          ExecStart=/usr/bin/dockerd
+          EOF
+          systemctl daemon-reload
+          service docker restart
+          systemctl daemon-reload
+
+  UserDataNginx:
+    Script01:
+      ScriptList:
+      - "#!/bin/bash -xe \n"
+      - "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 \n"
+      - "yum update -y \n"
+      - "amazon-linux-extras install -y epel \n"
+      - "yum install -y nginx \n"
+      - "service nginx start \n"
+      - "systemctl enable nginx \n"
+      - "yum install -y keepalived \n"
+      - "systemctl enable keepalived \n"
+      - "yum install -y git \n"
 
 
 Parameters:
@@ -85,33 +127,38 @@ Parameters:
     Type: String
     Default: 10.192.16.0/24
 
+  IpNginxHostSubnet1:
+    Description: Please enter the IP for the NGINX host subnet in the 1st Availability Zone
+    Type: String
+    Default: 10.192.11.70
+
   IpHostSubnet1:
-    Description: Please enter the IP for the hoste subnet in the 1st Availability Zone
+    Description: Please enter the IP for the DOCKER host subnet in the 1st Availability Zone
     Type: String
     Default: 10.192.11.50
 
   IpHostSubnet2:
-    Description: Please enter the IP for the hoste subnet in the 2nd Availability Zone
+    Description: Please enter the IP for the DOCKER host subnet in the 2nd Availability Zone
     Type: String
     Default: 10.192.12.50
 
   IpHostSubnet3:
-    Description: Please enter the IP for the hoste subnet in the 3rd Availability Zone
+    Description: Please enter the IP for the DOCKER host subnet in the 3rd Availability Zone
     Type: String
     Default: 10.192.13.50
 
   IpHostSubnet4:
-    Description: Please enter the IP for the hoste subnet in the 4th Availability Zone
+    Description: Please enter the IP for the DOCKER host subnet in the 4th Availability Zone
     Type: String
     Default: 10.192.14.50
 
   IpHostSubnet5:
-    Description: Please enter the IP for the hoste subnet in the 5th Availability Zone
+    Description: Please enter the IP for the DOCKER host subnet in the 5th Availability Zone
     Type: String
     Default: 10.192.15.50
 
   IpHostSubnet6:
-    Description: Please enter the IP for the hoste subnet in the 6th Availability Zone
+    Description: Please enter the IP for the DOCKER host subnet in the 6th Availability Zone
     Type: String
     Default: 10.192.16.50
 
@@ -182,156 +229,208 @@ Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref VpcCIDR
+      CidrBlock:
+        Ref: VpcCIDR
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Ref EnvironmentName
+          Value:
+            Ref: EnvironmentName
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Ref EnvironmentName
+          Value:
+            Ref: EnvironmentName
 
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      InternetGatewayId: !Ref InternetGateway
-      VpcId: !Ref VPC
+      InternetGatewayId: 
+        Ref: InternetGateway
+      VpcId: 
+        Ref: VPC
 
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId: 
+        Ref: VPC
       AvailabilityZone:
-        Fn::Select: [ 0, !GetAZs '' ]
-      CidrBlock: !Ref PublicSubnet1CIDR
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PublicSubnet1CIDR
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
+          Value:
+            Fn::Sub: ${EnvironmentName} Public Subnet (AZ1)
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId:
+        Ref: VPC
       AvailabilityZone:
-        Fn::Select: [ 1, !GetAZs  '' ]
-      CidrBlock: !Ref PublicSubnet2CIDR
+        Fn::Select:
+        - 1
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PublicSubnet2CIDR
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
+          Value:
+            Fn::Sub: ${EnvironmentName} Public Subnet (AZ2)
 
   PublicSubnet3:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId:
+        Ref: VPC
       AvailabilityZone:
-        Fn::Select: [ 2, !GetAZs  '' ]
-      CidrBlock: !Ref PublicSubnet3CIDR
+        Fn::Select:
+        - 2
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PublicSubnet3CIDR
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ3)
+          Value:
+            Fn::Sub: ${EnvironmentName} Public Subnet (AZ3)
 
   PublicSubnet4:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId:
+        Ref: VPC
       AvailabilityZone:
-        Fn::Select: [ 3, !GetAZs  '' ]
-      CidrBlock: !Ref PublicSubnet4CIDR
+        Fn::Select:
+        - 3
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PublicSubnet4CIDR
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ4)
+          Value:
+            Fn::Sub: ${EnvironmentName} Public Subnet (AZ4)
 
   PublicSubnet5:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId:
+        Ref: VPC
       AvailabilityZone:
-        Fn::Select: [ 4, !GetAZs  '' ]
-      CidrBlock: !Ref PublicSubnet5CIDR
+        Fn::Select:
+        - 4
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PublicSubnet5CIDR
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ5)
+          Value:
+            Fn::Sub: ${EnvironmentName} Public Subnet (AZ5)
 
   PublicSubnet6:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId:
+        Ref: VPC
       AvailabilityZone:
-        Fn::Select: [ 5, !GetAZs  '' ]
-      CidrBlock: !Ref PublicSubnet6CIDR
+        Fn::Select:
+        - 5
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PublicSubnet6CIDR
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ6)
+          Value:
+            Fn::Sub: ${EnvironmentName} Public Subnet (AZ6)
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref VPC
+      VpcId:
+        Ref: VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Routes
+          Value:
+            Fn::Sub: ${EnvironmentName} Public Routes
 
   DefaultPublicRoute:
     Type: AWS::EC2::Route
     DependsOn: InternetGatewayAttachment
     Properties:
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId:
+        Ref: PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
+      GatewayId:
+        Ref: InternetGateway
 
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet1
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet1
 
   PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet2
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet2
 
   PublicSubnet3RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet3
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet3
 
   PublicSubnet4RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet4
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet4
 
   PublicSubnet5RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet5
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet5
 
   PublicSubnet6RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet6
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet6
 
   NoIngressSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: "no-ingress-sg"
       GroupDescription: "Security group with no ingress rule"
-      VpcId: !Ref VPC
+      VpcId:
+        Ref: VPC
 
   AllTrafficSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -349,7 +448,8 @@ Resources:
         CidrIpv6: "::/0"
         FromPort: '0'
         ToPort: '65535'
-      VpcId: !Ref VPC
+      VpcId:
+        Ref: VPC
 
   TemplateDockerAwsLinux2AllTrafic:
     Type: AWS::EC2::LaunchTemplate
@@ -383,12 +483,16 @@ Resources:
       - Key: Name
         Value: docker01
       AvailabilityZone:
-        Fn::Select: [ 0, !GetAZs  '' ]
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
       NetworkInterfaces:
       - Description: Primary Network Interface
         DeviceIndex: '0'
-        SubnetId: !Ref PublicSubnet1
-        PrivateIpAddress: !Ref IpHostSubnet1
+        SubnetId:
+          Ref: PublicSubnet1
+        PrivateIpAddress:
+          Ref: IpHostSubnet1
         GroupSet:
         - Ref: AllTrafficSecurityGroup
       ImageId:
@@ -398,12 +502,20 @@ Resources:
         - id
       InstanceType:
         Ref: InstanceTypeParam
-      KeyName: !Ref KeyNameParam
+      KeyName:
+        Ref: KeyNameParam
       UserData:
         Fn::Base64:
           Fn::Join:
           - ''
-          - Fn::FindInMap: [UserData, Script01, ScriptList]
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                docker swarm init --advertise-addr eth0
 
   instanciadocker02:
     Type: AWS::EC2::Instance
@@ -412,12 +524,16 @@ Resources:
       - Key: Name
         Value: docker02
       AvailabilityZone:
-        Fn::Select: [ 1, !GetAZs  '' ]
+        Fn::Select:
+        - 1
+        - Fn::GetAZs: ''
       NetworkInterfaces:
       - Description: Primary Network Interface
         DeviceIndex: '0'
-        SubnetId: !Ref PublicSubnet2
-        PrivateIpAddress: !Ref IpHostSubnet2
+        SubnetId:
+          Ref: PublicSubnet2
+        PrivateIpAddress:
+          Ref: IpHostSubnet2
         GroupSet:
         - Ref: AllTrafficSecurityGroup
       ImageId:
@@ -427,12 +543,21 @@ Resources:
         - id
       InstanceType:
         Ref: InstanceTypeParam
-      KeyName: !Ref KeyNameParam
+      KeyName:
+        Ref: KeyNameParam
       UserData:
         Fn::Base64:
           Fn::Join:
           - ''
-          - Fn::FindInMap: [UserData, Script01, ScriptList]
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${IpHostSubnet1} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token manager -q) ${IpHostSubnet1}:2377
 
   instanciadocker03:
     Type: AWS::EC2::Instance
@@ -441,12 +566,16 @@ Resources:
       - Key: Name
         Value: docker03
       AvailabilityZone:
-        Fn::Select: [ 2, !GetAZs  '' ]
+        Fn::Select:
+        - 2
+        - Fn::GetAZs: ''
       NetworkInterfaces:
       - Description: Primary Network Interface
         DeviceIndex: '0'
-        SubnetId: !Ref PublicSubnet3
-        PrivateIpAddress: !Ref IpHostSubnet3
+        SubnetId:
+          Ref: PublicSubnet3
+        PrivateIpAddress:
+          Ref: IpHostSubnet3
         GroupSet:
         - Ref: AllTrafficSecurityGroup
       ImageId:
@@ -456,12 +585,21 @@ Resources:
         - id
       InstanceType:
         Ref: InstanceTypeParam
-      KeyName: !Ref KeyNameParam
+      KeyName:
+        Ref: KeyNameParam
       UserData:
         Fn::Base64:
           Fn::Join:
           - ''
-          - Fn::FindInMap: [UserData, Script01, ScriptList]
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${IpHostSubnet1} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token manager -q) ${IpHostSubnet1}:2377
 
   instanciadocker04:
     Type: AWS::EC2::Instance
@@ -470,12 +608,16 @@ Resources:
       - Key: Name
         Value: docker04
       AvailabilityZone:
-        Fn::Select: [ 3, !GetAZs  '' ]
+        Fn::Select:
+        - 3
+        - Fn::GetAZs: ''
       NetworkInterfaces:
       - Description: Primary Network Interface
         DeviceIndex: '0'
-        SubnetId: !Ref PublicSubnet4
-        PrivateIpAddress: !Ref IpHostSubnet4
+        SubnetId:
+          Ref: PublicSubnet4
+        PrivateIpAddress:
+          Ref: IpHostSubnet4
         GroupSet:
         - Ref: AllTrafficSecurityGroup
       ImageId:
@@ -485,12 +627,21 @@ Resources:
         - id
       InstanceType:
         Ref: InstanceTypeParam
-      KeyName: !Ref KeyNameParam
+      KeyName:
+        Ref: KeyNameParam
       UserData:
         Fn::Base64:
           Fn::Join:
           - ''
-          - Fn::FindInMap: [UserData, Script01, ScriptList]
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${IpHostSubnet1} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token manager -q) ${IpHostSubnet1}:2377
 
   instanciadocker05:
     Type: AWS::EC2::Instance
@@ -499,12 +650,16 @@ Resources:
       - Key: Name
         Value: docker05
       AvailabilityZone:
-        Fn::Select: [ 4, !GetAZs  '' ]
+        Fn::Select:
+        - 4
+        - Fn::GetAZs: ''
       NetworkInterfaces:
       - Description: Primary Network Interface
         DeviceIndex: '0'
-        SubnetId: !Ref PublicSubnet5
-        PrivateIpAddress: !Ref IpHostSubnet5
+        SubnetId:
+          Ref: PublicSubnet5
+        PrivateIpAddress:
+          Ref: IpHostSubnet5
         GroupSet:
         - Ref: AllTrafficSecurityGroup
       ImageId:
@@ -514,12 +669,21 @@ Resources:
         - id
       InstanceType:
         Ref: InstanceTypeParam
-      KeyName: !Ref KeyNameParam
+      KeyName:
+        Ref: KeyNameParam
       UserData:
         Fn::Base64:
           Fn::Join:
           - ''
-          - Fn::FindInMap: [UserData, Script01, ScriptList]
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${IpHostSubnet1} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token manager -q) ${IpHostSubnet1}:2377
 
   instanciadocker06:
     Type: AWS::EC2::Instance
@@ -528,12 +692,16 @@ Resources:
       - Key: Name
         Value: docker06
       AvailabilityZone:
-        Fn::Select: [ 5, !GetAZs  '' ]
+        Fn::Select:
+        - 5
+        - Fn::GetAZs: ''
       NetworkInterfaces:
       - Description: Primary Network Interface
         DeviceIndex: '0'
-        SubnetId: !Ref PublicSubnet6
-        PrivateIpAddress: !Ref IpHostSubnet6
+        SubnetId:
+          Ref: PublicSubnet6
+        PrivateIpAddress:
+          Ref: IpHostSubnet6
         GroupSet:
         - Ref: AllTrafficSecurityGroup
       ImageId:
@@ -543,48 +711,118 @@ Resources:
         - id
       InstanceType:
         Ref: InstanceTypeParam
-      KeyName: !Ref KeyNameParam
+      KeyName:
+        Ref: KeyNameParam
       UserData:
         Fn::Base64:
           Fn::Join:
           - ''
-          - Fn::FindInMap: [UserData, Script01, ScriptList]
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${IpHostSubnet1} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token worker -q) ${IpHostSubnet1}:2377
+
+  Nginx1Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+        - Key: Name
+          Value: nginx01
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
+      NetworkInterfaces:
+      - Description: Primary Network Interface
+        DeviceIndex: '0'
+        SubnetId:
+          Ref: PublicSubnet1
+        PrivateIpAddress:
+          Ref: IpNginxHostSubnet1
+        GroupSet:
+        - Ref: AllTrafficSecurityGroup
+        AssociatePublicIpAddress: true
+        DeleteOnTermination: true
+      ImageId:
+        Fn::FindInMap:
+        - AmiMap
+        - ServerType01
+        - id
+      InstanceType:
+        Ref: InstanceTypeParam
+      KeyName:
+        Ref: KeyNameParam
+      SourceDestCheck: False
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserDataNginx
+                - Script01
+                - ScriptList
+            - !Sub |
+                cp /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf.original
+
 
 
 Outputs:
 
   VPC:
     Description: A reference to the created VPC
-    Value: !Ref VPC
+    Value:
+      Ref: VPC
 
   PublicSubnets:
     Description: A list of the public subnets
-    Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2, !Ref PublicSubnet3, !Ref PublicSubnet4, !Ref PublicSubnet5, !Ref PublicSubnet6 ]]
+    Value:
+      Fn::Join:
+      - ","
+      - - Ref: PublicSubnet1
+        - Ref: PublicSubnet2
+        - Ref: PublicSubnet3
+        - Ref: PublicSubnet4
+        - Ref: PublicSubnet5
+        - Ref: PublicSubnet6
 
   PublicSubnet1:
     Description: A reference to the public subnet in the 1st Availability Zone
-    Value: !Ref PublicSubnet1
+    Value:
+      Ref: PublicSubnet1
 
   PublicSubnet2:
     Description: A reference to the public subnet in the 2nd Availability Zone
-    Value: !Ref PublicSubnet2
+    Value:
+      Ref: PublicSubnet2
 
   PublicSubnet3:
     Description: A reference to the public subnet in the 3rd Availability Zone
-    Value: !Ref PublicSubnet3
+    Value:
+      Ref: PublicSubnet3
 
   PublicSubnet4:
     Description: A reference to the public subnet in the 4th Availability Zone
-    Value: !Ref PublicSubnet4
+    Value:
+      Ref: PublicSubnet4
 
   PublicSubnet5:
     Description: A reference to the public subnet in the 3rd Availability Zone
-    Value: !Ref PublicSubnet5
+    Value:
+      Ref: PublicSubnet5
 
   PublicSubnet6:
     Description: A reference to the public subnet in the 4th Availability Zone
-    Value: !Ref PublicSubnet6
+    Value:
+      Ref: PublicSubnet6
 
   NoIngressSecurityGroup:
     Description: Security group with no ingress rule
-    Value: !Ref NoIngressSecurityGroup
+    Value:
+      Ref: NoIngressSecurityGroup

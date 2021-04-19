@@ -1,5 +1,5 @@
 
-Description:  This template deploys a VPC, with a pair of public spread
+Description:  This template deploys a VPC, with public subnets spread
   across two Availability Zones. It deploys an internet gateway, with a default
   route on the public subnets.
 
