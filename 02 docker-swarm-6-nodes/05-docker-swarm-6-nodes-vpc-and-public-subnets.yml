@@ -22,21 +22,6 @@ Mappings:
     ServerType01:
       id: ami-02354e95b39ca8dec
 
-  UserData2:
-    Script01:
-      ScriptList:
-      - "#!/bin/bash -xe\n"
-      - "yum update -y \n"
-      - "amazon-linux-extras install -y docker \n"
-      - "service docker start \n"
-      - "systemctl enable docker \n"
-      - "usermod -a -G docker ec2-user \n"
-      - 'curl -L '
-      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
-        -s)-$(uname -m)"'
-      - " -o /usr/local/bin/docker-compose \n"
-      - "chmod +x /usr/local/bin/docker-compose \n"
-
   UserData:
     Script01:
       ScriptList:
