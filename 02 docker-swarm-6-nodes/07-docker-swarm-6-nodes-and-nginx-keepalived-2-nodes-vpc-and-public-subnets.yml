@@ -631,7 +631,7 @@ Resources:
                 - ScriptList
             - !Sub |
                 while ! (nc -z ${IpHostSubnet1} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
-                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token manager -q) ${IpHostSubnet1}:2377
+                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token worker -q) ${IpHostSubnet1}:2377
 
   Docker05Instance:
     Type: AWS::EC2::Instance
@@ -673,7 +673,7 @@ Resources:
                 - ScriptList
             - !Sub |
                 while ! (nc -z ${IpHostSubnet1} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
-                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token manager -q) ${IpHostSubnet1}:2377
+                docker swarm join --token $(docker -H ${IpHostSubnet1} swarm join-token worker -q) ${IpHostSubnet1}:2377
 
   Docker06Instance:
     Type: AWS::EC2::Instance
@@ -939,3 +939,43 @@ Outputs:
     Description: Security group with no ingress rule
     Value:
       Ref: NoIngressSecurityGroup
+
+  Docker01Instance:
+    Description: Docker swarm cluster node 1 manager
+    Value:
+      Ref: Docker01Instance
+
+  Docker02Instance:
+    Description: Docker swarm cluster node 2 manager
+    Value:
+      Ref: Docker02Instance
+
+  Docker03Instance:
+    Description: Docker swarm cluster node 3 manager
+    Value:
+      Ref: Docker03Instance
+
+  Docker04Instance:
+    Description: Docker swarm cluster node 4 worker
+    Value:
+      Ref: Docker04Instance
+
+  Docker05Instance:
+    Description: Docker swarm cluster node 5 worker
+    Value:
+      Ref: Docker05Instance
+
+  Docker06Instance:
+    Description: Docker swarm cluster node 6 worker
+    Value:
+      Ref: Docker06Instance
+
+  Nginx01Instance:
+    Description: NGINX server 1 master primary node
+    Value:
+      Ref: Nginx01Instance
+
+  Nginx02Instance:
+    Description: NGINX server 2 backup hot standby
+    Value:
+      Ref: Nginx02Instance
