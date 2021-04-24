@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Application Template: This template provisions 2 EC2 instances in a VPC Subnet provisioned in a different stack. Use the cft '03-vpc and 4 public subnets (add export alias privatesubnet).json' to create the VPC stack
+  Application Template: This template provisions 2 EC2 instances whith nginx and keepalived in a VPC Subnet provisioned in a different stack.
 
 
 ######################
@@ -52,6 +52,16 @@ Parameters:
     Default: ami-02354e95b39ca8dec
     ConstraintDescription: must be the ID of an existing AMI.
 
+  IpNginxHost1:
+    Description: Please enter the IP for the NGINX host in the 1st Availability Zone, in Private Subnet1 of the VPC stack already created
+    Type: String
+    Default: 10.192.13.31
+
+  IpNginxHost2:
+    Description: Please enter the IP for the NGINX host in the 2nd Availability Zone, in Private Subnet2 of the VPC stack already created
+    Type: String
+    Default: 10.192.14.31
+
 
 ######################
 # Resources section
@@ -74,7 +84,9 @@ Resources:
             - Fn::ImportValue:
                 !Sub ${NetworkStackName}-AllTrafficSecurityGroup
           AssociatePublicIpAddress: true
-          PrivateIpAddress: 10.192.13.31
+          PrivateIpAddress:
+            Ref: IpNginxHost1
+#          PrivateIpAddress: 10.192.13.31
           DeviceIndex: 0
           DeleteOnTermination: true
           SubnetId:
@@ -126,9 +138,9 @@ Resources:
                             auth_type PASS
                             auth_pass 123@admin
                         }
-                        unicast_src_ip 10.192.13.31          #  <------    My IP   - AJUSTAR CONFORME AMBIENTE
+                        unicast_src_ip ${IpNginxHost1}        #  <------    My IP   - AJUSTAR CONFORME AMBIENTE
                         unicast_peer {
-                            10.192.14.31                     #  <------    Peer IP - AJUSTAR CONFORME AMBIENTE
+                            ${IpNginxHost2}                   #  <------    Peer IP - AJUSTAR CONFORME AMBIENTE
                         }
                         track_script {
                             chk_http_port
@@ -157,7 +169,9 @@ Resources:
             - Fn::ImportValue:
                 !Sub ${NetworkStackName}-AllTrafficSecurityGroup
           AssociatePublicIpAddress: true
-          PrivateIpAddress: 10.192.14.31
+          PrivateIpAddress:
+            Ref: IpNginxHost2
+#          PrivateIpAddress: 10.192.14.31
           DeviceIndex: 0
           DeleteOnTermination: true
           SubnetId:
@@ -193,9 +207,9 @@ Resources:
                             auth_type PASS
                             auth_pass 123@admin
                         }
-                        unicast_src_ip 10.192.14.31          #  <------   My IP  - AJUSTAR CONFORME AMBIENTE
+                        unicast_src_ip ${IpNginxHost2}        #  <------    My IP   - AJUSTAR CONFORME AMBIENTE
                         unicast_peer {
-                            10.192.13.31                     #  <------   Peer IP - AJUSTAR CONFORME AMBIENTE
+                            ${IpNginxHost1}                   #  <------    Peer IP - AJUSTAR CONFORME AMBIENTE
                         }
                         track_script {
                             chk_http_port

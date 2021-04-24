@@ -292,21 +292,33 @@ Outputs:
   AwsLinux2Docker1PrivateIP:
     Description: IP of the Docker-01 Linux Instance
     Value: !GetAtt AwsLinux2DockerInstance1.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker1PrivateIP
   AwsLinux2Docker2PrivateIP:
     Description: IP of the Docker-02 Linux Instance
     Value: !GetAtt AwsLinux2DockerInstance2.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker2PrivateIP
   AwsLinux2Docker3PrivateIP:
-    Description: IP of the Docker-01 Linux Instance
+    Description: IP of the Docker-03 Linux Instance
     Value: !GetAtt AwsLinux2DockerInstance3.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker3PrivateIP
   AwsLinux2Docker4PrivateIP:
-    Description: IP of the Docker-02 Linux Instance
+    Description: IP of the Docker-04 Linux Instance
     Value: !GetAtt AwsLinux2DockerInstance4.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker4PrivateIP
   AwsLinux2Docker5PrivateIP:
-    Description: IP of the Docker-01 Linux Instance
+    Description: IP of the Docker-05 Linux Instance
     Value: !GetAtt AwsLinux2DockerInstance5.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker5PrivateIP
   AwsLinux2Docker6PrivateIP:
-    Description: IP of the Docker-02 Linux Instance
+    Description: IP of the Docker-06 Linux Instance
     Value: !GetAtt AwsLinux2DockerInstance6.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker6PrivateIP
 
   AwsLinux2Docker1URL:
     Description: URL of the Docker-01 Linux Instance
@@ -314,12 +326,6 @@ Outputs:
   AwsLinux2Docker2URL:
     Description: URL of the Docker-02 Linux Instance
     Value: !Sub 'http://${AwsLinux2DockerInstance2.PublicDnsName}'
-  AwsLinux2Docker1PrivateIP:
-    Description: IP of the Docker-01 Linux Instance
-    Value: !GetAtt AwsLinux2DockerInstance1.PrivateIp
-  AwsLinux2Docker2PrivateIP:
-    Description: IP of the Docker-02 Linux Instance
-    Value: !GetAtt AwsLinux2DockerInstance2.PrivateIp
   AwsLinux2Docker3URL:
     Description: URL of the Docker-03 in Linux Instance
     Value: !Sub 'http://${AwsLinux2DockerInstance3.PublicDnsName}'
