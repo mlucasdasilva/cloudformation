@@ -1,4 +1,4 @@
-﻿# CloudFormation Templates
+# CloudFormation Templates
 
 
 Other references:
@@ -9,11 +9,11 @@ https://github.com/awslabs/aws-academy-educator-toolkit
 
 ## Subdirs:
 
-01 docker01-ec2-instance
-01 docker01-ec2-instance-generic
-02 docker-swarm-6-nodes
-03 vpc
-04 vpc export
+01 docker01-ec2-instance  
+01 docker01-ec2-instance-generic  
+02 docker-swarm-6-nodes  
+03 vpc  
+04 vpc export  
 05 aws lab 5 ACAv1
 06 aws lab projeto 2 ACAv1
 07 Truenas
@@ -32,9 +32,9 @@ https://github.com/awslabs/aws-academy-educator-toolkit
 
 ## CFT files:
 
-01 docker01-ec2-instance\01-docker01-resource-apenas.json
-01 docker01-ec2-instance\01-docker01-resource-apenas.yml
-01 docker01-ec2-instance\01-docker01-resource-e-description.json
+01 docker01-ec2-instance\01-docker01-resource-apenas.json  
+01 docker01-ec2-instance\01-docker01-resource-apenas.yml  
+01 docker01-ec2-instance\01-docker01-resource-e-description.json  
 01 docker01-ec2-instance\01-docker01-resource-e-description.yml
 01 docker01-ec2-instance\01-docker01-resource-instance-e-sg.json
 01 docker01-ec2-instance\01-docker01-resource-instance-e-sg.yml
