@@ -122,6 +122,7 @@ https://github.com/awslabs/aws-academy-educator-toolkit
   
 14 Windows\01- Windows instance.yaml  
 14 Windows\02- Windows instance install my-workbench moba.yaml  
+* Cria uma instanica windows ser com MySqlWorkBench e Moba-Xterm instalados: 
 14 Windows\03- Windows instance user data param install myworkbench moba.yaml  
 14 Windows\04- Windows instance user data param install myworkbench moba 5 ebs storage.yaml  
 14 Windows\05- Windows instance user data param install myworkbench moba 10 ebs storage.yaml  
