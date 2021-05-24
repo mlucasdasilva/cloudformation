@@ -51,8 +51,8 @@ Parameters:
   AmiWindowsServerParam:
     Description: Select Windows Server AMI (x86)
     Type: AWS::EC2::Image::Id
-    Default: ami-02a6c9fa263b1caf6
-    ConstraintDescription: must be the ID of an existing AMI. (defaul ami-02a6c9fa263b1caf6 Windows Server 2019 Base with containers)
+    Default: ami-0be6f09264f372d7a
+    ConstraintDescription: must be the ID of an existing AMI. (defaul ami-0be6f09264f372d7a Windows Server 2019 Base with containers)
 
 
 ######################
