@@ -89,6 +89,29 @@ Parameters:
     MinLength: 1
     MaxLength: 1024
     Default: docker service create --name web1 -p 80:80 nginx
+    #Exemplos:
+    #
+    #  # Bancos de dados:
+    #    # Mysql:
+    #        git clone http://github.com/mlucasdasilva/meusbancos ; cd meusbancos/mysql57  ; docker-compose up -d
+    #    # Postgres:
+    #        git clone http://github.com/mlucasdasilva/meusbancos ; cd meusbancos/postgres ; docker-compose up -d
+    #
+    #  # Aplicativos que usam banco de dados:
+    #    # GLPI
+    #        git clone https://github.com/mlucasdasilva/itsm ; cd itsm/glpi ; docker-compose up -d
+    #    # iTOP
+    #        git clone https://github.com/mlucasdasilva/itsm ; cd itsm/itop ; docker-compose up -d
+    #    # Suitecrm
+    #        git clone https://github.com/mlucasdasilva/suitecrm-docker.git suitecrm ; cd suitecrm ; docker-compose up -d
+    #    # Moodle
+    #        git clone https://github.com/mlucasdasilva/moodle-docker.git moodle ; cd moodle ; docker-compose up -d
+    #    # Redmine
+    #        git clone https://github.com/mlucasdasilva/redmine.git ; cd redmine ; docker-compose up -d
+    #    # Taiga
+    #        git clone https://github.com/mlucasdasilva/taiga.git ; cd taiga ; export TAIGA_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname -s) ; docker-compose up -d
+    #    # Rundeck - não esta configurado para uso de banco de dados externo
+    #        git clone https://github.com/mlucasdasilva/rundeck.git ; cd rundeck ; export RUNDECK_HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/public-hostname -s) ; docker-compose up -d
 
   SubnetFromStackName:
     Description: Subnet from the NetworkStackName export
