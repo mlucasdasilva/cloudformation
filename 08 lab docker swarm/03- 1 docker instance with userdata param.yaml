@@ -18,12 +18,14 @@ Mappings:
       - "service docker start \n"
       - "systemctl enable docker \n"
       - "usermod -a -G docker ec2-user \n"
+      - "yum install -y nc telnet git \n"
+      - "COMPOSE_VERSION=$(git ls-remote https://github.com/docker/compose | grep refs/tags | grep -oE '[0-9]+\\.[0-9][0-9]+\\.[0-9]+$' | sort --version-sort | tail -n 1) \n"
       - 'curl -L '
-      - '"https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname
-        -s)-$(uname -m)"'
+      - '"https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)"'
       - " -o /usr/local/bin/docker-compose \n"
       - "chmod +x /usr/local/bin/docker-compose \n"
-      - "yum install -y git \n"
+
+## To see the user data execution log use: tail -f /var/log/user-data.log
 
 ##!/bin/bash -xe
 #exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
