@@ -79,7 +79,7 @@ Parameters:
     Type: String
     MinLength: 1
     MaxLength: 1024
-    Default: echo fim
+    Default: mkdir /mnt/volume-docker/mysql ; docker service create -p 3000:3306 --mount=type=bind,source=/mnt/volume-docker/mysql,destination=/var/lib/mysql  --name mysqlteste -e MYSQL_ROOT_PASSWORD=admin@1234 mysql:5.7 ; docker  service create -p 80:8080 --name adminerteste adminer
 
 #  UserDataParam:
 #    Description: >-
