@@ -79,7 +79,7 @@ Parameters:
     Type: String
     MinLength: 1
     MaxLength: 1024
-    Default: mkdir /mnt/volume-docker/mysql ; docker service create -p 3000:3306 --mount=type=bind,source=/mnt/volume-docker/mysql,destination=/var/lib/mysql  --name mysqlteste -e MYSQL_ROOT_PASSWORD=admin@1234 mysql:5.7 ; docker  service create -p 80:8080 --name adminerteste adminer
+    Default: mkdir /mnt/volume-docker/mysql ; docker service create -p 3306:3306 --mount=type=bind,source=/mnt/volume-docker/mysql,destination=/var/lib/mysql  --name mysqlteste -e MYSQL_ROOT_PASSWORD=admin@1234 mysql:5.7 ; docker  service create -p 8080:8080 --name adminerteste adminer
 
 #  UserDataParam:
 #    Description: >-
@@ -111,7 +111,7 @@ Parameters:
     Type: String
     MinLength: 1
     MaxLength: 6
-    Default: 3000
+    Default: 3306
 
 
 ######################
@@ -164,17 +164,17 @@ Resources:
       Targets:
         - Id:
             Ref: AwsLinux2DockerInstance1
-          Port: 80
+          Port: 8080
         - Id: !Ref AwsLinux2DockerInstance2
-          Port: 80
+          Port: 8080
         - Id: !Ref AwsLinux2DockerInstance3
-          Port: 80
+          Port: 8080
         - Id: !Ref AwsLinux2DockerInstance4
-          Port: 80
+          Port: 8080
         - Id: !Ref AwsLinux2DockerInstance5
-          Port: 80
+          Port: 8080
         - Id: !Ref AwsLinux2DockerInstance6
-          Port: 80
+          Port: 8080
       Tags:
       - Key: Name
         Value: TargetGroupELB
@@ -251,10 +251,6 @@ Resources:
     - AwsLinux2DockerInstance4
     - AwsLinux2DockerInstance5
     - AwsLinux2DockerInstance6
-
-
-
-
 
 
 
