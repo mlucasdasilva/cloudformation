@@ -79,7 +79,8 @@ Parameters:
     Type: String
     MinLength: 1
     MaxLength: 1024
-    Default: mkdir /mnt/volume-docker/mysql ; docker service create -p 3306:3306 --mount=type=bind,source=/mnt/volume-docker/mysql,destination=/var/lib/mysql  --name mysqlteste -e MYSQL_ROOT_PASSWORD=admin@1234 mysql:5.7 ; docker  service create -p 8080:8080 --name adminerteste adminer
+    Default: mkdir /mnt/volume-docker/mysql ; docker service create -p 3306:3306 --mount=type=bind,source=/mnt/volume-docker/mysql,destination=/var/lib/mysql  --name mysqlteste -e MYSQL_ROOT_PASSWORD=admin@1234 mysql:5.7 ; docker  service create -p 8080:8080 -e ADMINER_DEFAULT_SERVER=mysqlteste --name adminerteste adminer ; sleep 10; docker network create -d overlay --attachable mysqlteste-network ; docker service update --network-add mysqlteste-network mysqlteste ; docker service update --network-add mysqlteste-network adminerteste
+
 
 #  UserDataParam:
 #    Description: >-
