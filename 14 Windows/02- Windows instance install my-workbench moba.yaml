@@ -46,7 +46,13 @@ Parameters:
     Description: WebServer EC2 instance type
     Type: String
     Default: t2.small
-    ConstraintDescription: must be a valid EC2 instance type.
+    ConstraintDescription: must be an AWS educate allowed EC2 instance type.
+    AllowedValues:
+    - t2.small
+    - t2.micro
+    - t2.medium
+    - c5.large
+    - m5.large
 
 
 ######################
