@@ -138,7 +138,7 @@ Resources:
   TargetGroupELB:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      Name: TargetGroupELB
+      Name: !Sub ${AWS::StackName}-TargetGroupELB
       HealthCheckIntervalSeconds: 10
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
@@ -170,7 +170,7 @@ Resources:
           Port: 80
       Tags:
       - Key: Name
-        Value: TargetGroupELB
+        Value: !Sub ${AWS::StackName}-TargetGroupELB
       - Key: Port
         Value: 80
     DependsOn:

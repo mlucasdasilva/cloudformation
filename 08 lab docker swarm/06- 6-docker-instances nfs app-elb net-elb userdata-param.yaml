@@ -145,7 +145,7 @@ Resources:
   TargetGroupELB:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      Name: TargetGroupELB
+      Name: !Sub ${AWS::StackName}-TargetGroupELB
       HealthCheckIntervalSeconds: 10
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
@@ -177,7 +177,7 @@ Resources:
           Port: 80
       Tags:
       - Key: Name
-        Value: TargetGroupELB
+        Value: !Sub ${AWS::StackName}-TargetGroupELB
       - Key: Port
         Value: 80
     DependsOn:
@@ -211,7 +211,7 @@ Resources:
   TargetGroupNetELB:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      Name: TargetGroupNetELB
+      Name: !Sub ${AWS::StackName}-TargetGroupNetELB
       HealthCheckIntervalSeconds: 10
       HealthCheckProtocol: TCP
       # Health check healthy threshold and unhealthy threshold must be the same for target groups with the TCP protocol
@@ -241,7 +241,7 @@ Resources:
           Port: !Ref NetELBPortParam
       Tags:
       - Key: Name
-        Value: TargetGroupNetELB
+        Value: !Sub ${AWS::StackName}-TargetGroupNetELB
       - Key: Port
         Value: !Ref NetELBPortParam
     DependsOn:
