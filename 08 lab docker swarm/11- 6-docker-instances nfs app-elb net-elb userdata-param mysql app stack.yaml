@@ -349,7 +349,10 @@ Resources:
                 docker swarm init --advertise-addr eth0
                 yum install -y amazon-efs-utils
                 mkdir /mnt/volume-docker
-                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                echo "${FileSystemResource.FileSystemId}:/ /mnt/volume-docker efs _netdev 0 0" >> /etc/fstab
+                mount /mnt/volume-docker
+                #mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                #echo "${FileSystemResource.FileSystemId}:/ /mnt/volume-docker efs _netdev,tls,aim 0 0" >> /etc/fstab
                 #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
                 echo  "#!/bin/bash" > /mnt/volume-docker/join-worker.sh
                 echo  "#!/bin/bash" > /mnt/volume-docker/join-manager.sh
@@ -397,8 +400,8 @@ Resources:
             - !Sub |
                 yum install -y amazon-efs-utils
                 mkdir /mnt/volume-docker
-                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
-                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                echo "${FileSystemResource.FileSystemId}:/ /mnt/volume-docker efs _netdev 0 0" >> /etc/fstab
+                mount /mnt/volume-docker
                 /mnt/volume-docker/join-manager.sh
             - !Ref UserDataServiceParam
 #            - !Ref UserDataAllMgrParam
@@ -442,8 +445,8 @@ Resources:
             - !Sub |
                 yum install -y amazon-efs-utils
                 mkdir /mnt/volume-docker
-                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
-                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                echo "${FileSystemResource.FileSystemId}:/ /mnt/volume-docker efs _netdev 0 0" >> /etc/fstab
+                mount /mnt/volume-docker
                 /mnt/volume-docker/join-manager.sh
 #            - !Ref UserDataAllMgrParam
 #            - !Ref UserDataParam
@@ -486,8 +489,8 @@ Resources:
             - !Sub |
                 yum install -y amazon-efs-utils
                 mkdir /mnt/volume-docker
-                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
-                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                echo "${FileSystemResource.FileSystemId}:/ /mnt/volume-docker efs _netdev 0 0" >> /etc/fstab
+                mount /mnt/volume-docker
                 /mnt/volume-docker/join-worker.sh
 #            - !Ref UserDataAllWorkersParam
 #            - !Ref UserDataParam
@@ -530,8 +533,8 @@ Resources:
             - !Sub |
                 yum install -y amazon-efs-utils
                 mkdir /mnt/volume-docker
-                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
-                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                echo "${FileSystemResource.FileSystemId}:/ /mnt/volume-docker efs _netdev 0 0" >> /etc/fstab
+                mount /mnt/volume-docker
                 /mnt/volume-docker/join-worker.sh
 #            - !Ref UserDataAllWorkersParam
 #            - !Ref UserDataParam
@@ -574,8 +577,8 @@ Resources:
             - !Sub |
                 yum install -y amazon-efs-utils
                 mkdir /mnt/volume-docker
-                mount -t efs        ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
-                #mount -t efs -o tls ${FileSystemResource.FileSystemId}:/ /mnt/volume-docker
+                echo "${FileSystemResource.FileSystemId}:/ /mnt/volume-docker efs _netdev 0 0" >> /etc/fstab
+                mount /mnt/volume-docker
                 /mnt/volume-docker/join-worker.sh
 #            - !Ref UserDataAllWorkersParam
 #            - !Ref UserDataParam
