@@ -1,0 +1,407 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Application Template: This template provisions 6 EC2 docker instance in a VPC Subnet provisioned in a different stack.
+
+
+######################
+# Mappings section
+######################
+
+Mappings:
+  UserData:
+    Script01:
+      ScriptList:
+        - |
+          #!/bin/bash -ex
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1 
+          yum -y update
+          yum install -y nc telnet
+          amazon-linux-extras install -y docker
+          service docker start
+          systemctl enable docker
+          usermod -a -G docker ec2-user
+          curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          yum install -y git
+          mkdir -p /etc/docker
+          cat  <<EOF > /etc/docker/daemon.json
+          {"hosts": ["tcp://0.0.0.0:2375", "unix:///var/run/docker.sock"]}
+          EOF
+          mkdir -p /etc/systemd/system/docker.service.d
+          cat  <<EOF > /etc/systemd/system/docker.service.d/override.conf
+          [Service]
+          ExecStart=
+          ExecStart=/usr/bin/dockerd
+          EOF
+          systemctl daemon-reload
+          service docker restart
+          systemctl daemon-reload
+
+
+
+######################
+# Parameters section
+######################
+
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: MyCloud
+
+  KeyNameParam:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: key-pair-teste
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmiAwsLinux2DockerParam:
+    Description: Select AWS Linux 2 AMI (x86)
+    Type: AWS::EC2::Image::Id
+    Default: ami-02354e95b39ca8dec
+    ConstraintDescription: must be the ID of an existing AMI.
+
+  InstanceTypeParam:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.small
+    ConstraintDescription: must be an AWS Educate allowed EC2 instance type.
+    AllowedValues:
+    - t2.small
+    - t2.micro
+    - t2.medium
+    - c5.large
+    - m5.large
+#    AllowedValues:
+#    - t1.micro
+#    - t2.nano
+#    - t2.micro
+#    - t2.small
+#    - t2.medium
+#    - t2.large
+#    - m1.small
+#    - m1.medium
+#    - m1.large
+#    - m1.xlarge
+#    - m2.xlarge
+#    - m2.2xlarge
+#    - m2.4xlarge
+#    - m3.medium
+#    - m3.large
+#    - m3.xlarge
+#    - m3.2xlarge
+#    - m4.large
+#    - m4.xlarge
+#    - m4.2xlarge
+#    - m4.4xlarge
+#    - m4.10xlarge
+#    - c1.medium
+#    - c1.xlarge
+#    - c3.large
+#    - c3.xlarge
+#    - c3.2xlarge
+#    - c3.4xlarge
+#    - c3.8xlarge
+#    - c4.large
+#    - c4.xlarge
+#    - c4.2xlarge
+#    - c4.4xlarge
+#    - c4.8xlarge
+#    - g2.2xlarge
+#    - g2.8xlarge
+#    - r3.large
+#    - r3.xlarge
+#    - r3.2xlarge
+#    - r3.4xlarge
+#    - r3.8xlarge
+#    - i2.xlarge
+#    - i2.2xlarge
+#    - i2.4xlarge
+#    - i2.8xlarge
+#    - d2.xlarge
+#    - d2.2xlarge
+#    - d2.4xlarge
+#    - d2.8xlarge
+#    - hi1.4xlarge
+#    - hs1.8xlarge
+#    - cr1.8xlarge
+#    - cc2.8xlarge
+#    - cg1.4xlarge
+
+
+######################
+# Resources section
+######################
+
+Resources:
+
+  AwsLinux2DockerInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: Docker-01
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                docker swarm init --advertise-addr eth0
+
+  AwsLinux2DockerInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: Docker-02
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${AwsLinux2DockerInstance1.PrivateIp} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${AwsLinux2DockerInstance1.PrivateIp} swarm join-token manager -q) ${AwsLinux2DockerInstance1.PrivateIp}:2377
+    DependsOn: AwsLinux2DockerInstance1
+
+  AwsLinux2DockerInstance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: Docker-03
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${AwsLinux2DockerInstance1.PrivateIp} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${AwsLinux2DockerInstance1.PrivateIp} swarm join-token manager -q) ${AwsLinux2DockerInstance1.PrivateIp}:2377
+    DependsOn: AwsLinux2DockerInstance1
+
+  AwsLinux2DockerInstance4:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: Docker-04
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${AwsLinux2DockerInstance1.PrivateIp} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${AwsLinux2DockerInstance1.PrivateIp} swarm join-token worker -q) ${AwsLinux2DockerInstance1.PrivateIp}:2377
+    DependsOn: AwsLinux2DockerInstance1
+
+  AwsLinux2DockerInstance5:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: Docker-05
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet1ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${AwsLinux2DockerInstance1.PrivateIp} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${AwsLinux2DockerInstance1.PrivateIp} swarm join-token worker -q) ${AwsLinux2DockerInstance1.PrivateIp}:2377
+    DependsOn: AwsLinux2DockerInstance1
+
+  AwsLinux2DockerInstance6:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      ImageId: !Ref AmiAwsLinux2DockerParam
+      Tags:
+        - Key: Name
+          Value: Docker-06
+      KeyName:
+        Ref: KeyNameParam
+      NetworkInterfaces:
+        - GroupSet:
+            - Fn::ImportValue:
+                !Sub ${NetworkStackName}-AllTrafficSecurityGroup
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          DeleteOnTermination: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${NetworkStackName}-PrivateSubnet2ID
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - Fn::Join:
+              - ''
+              - Fn::FindInMap:
+                - UserData
+                - Script01
+                - ScriptList
+            - !Sub |
+                while ! (nc -z ${AwsLinux2DockerInstance1.PrivateIp} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                docker swarm join --token $(docker -H ${AwsLinux2DockerInstance1.PrivateIp} swarm join-token worker -q) ${AwsLinux2DockerInstance1.PrivateIp}:2377
+    DependsOn: AwsLinux2DockerInstance1
+
+
+######################
+# Outputs section
+######################
+
+Outputs:
+
+  AwsLinux2Docker1PrivateIP:
+    Description: IP of the Docker-01 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance1.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker1PrivateIP
+  AwsLinux2Docker2PrivateIP:
+    Description: IP of the Docker-02 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance2.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker2PrivateIP
+  AwsLinux2Docker3PrivateIP:
+    Description: IP of the Docker-03 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance3.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker3PrivateIP
+  AwsLinux2Docker4PrivateIP:
+    Description: IP of the Docker-04 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance4.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker4PrivateIP
+  AwsLinux2Docker5PrivateIP:
+    Description: IP of the Docker-05 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance5.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker5PrivateIP
+  AwsLinux2Docker6PrivateIP:
+    Description: IP of the Docker-06 Linux Instance
+    Value: !GetAtt AwsLinux2DockerInstance6.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-Docker6PrivateIP
+
+  AwsLinux2Docker1URL:
+    Description: URL of the Docker-01 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance1.PublicDnsName}'
+  AwsLinux2Docker2URL:
+    Description: URL of the Docker-02 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance2.PublicDnsName}'
+  AwsLinux2Docker3URL:
+    Description: URL of the Docker-03 in Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance3.PublicDnsName}'
+  AwsLinux2Docker4URL:
+    Description: URL of the Docker-04 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance4.PublicDnsName}'
+  AwsLinux2Docker5URL:
+    Description: URL of the Docker-05 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance5.PublicDnsName}'
+  AwsLinux2Docker6URL:
+    Description: URL of the Docker-06 Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerInstance6.PublicDnsName}'
