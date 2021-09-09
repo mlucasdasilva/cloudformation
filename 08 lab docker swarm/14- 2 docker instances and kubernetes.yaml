@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Application Template: This template provisions 6 EC2 docker instance in a VPC Subnet provisioned in a different stack.
+  Application Template: This template provisions 2 EC2 docker instances with kubernetes in a VPC Subnet provisioned in a different stack.
 
 
 ######################
@@ -59,6 +59,8 @@ Mappings:
           EOT
           yum install -y kubelet kubeadm kubectl
           systemctl enable --now kubelet
+          curl -L "https://github.com/kubernetes/kompose/releases/download/v1.22.0/kompose-linux-amd64" -o /usr/local/bin/kompose
+          chmod +x /usr/local/bin/kompose
           kubeadm config images pull
 
 
@@ -177,14 +179,14 @@ Parameters:
 
 Resources:
 
-  AwsLinux2DockerInstance1:
+  AwsLinux2DockerMasterInstance1:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceTypeMasterParam
       ImageId: !Ref AmiAwsLinux2DockerParam
       Tags:
         - Key: Name
-          Value: Docker-01
+          Value: !Sub ${AWS::StackName}-master
       KeyName:
         Ref: KeyNameParam
       NetworkInterfaces:
@@ -222,14 +224,14 @@ Resources:
                 #kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
                 echo "fim"
 
-  AwsLinux2DockerInstance2:
+  AwsLinux2DockerWorkerInstance2:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceTypeWorkerParam
       ImageId: !Ref AmiAwsLinux2DockerParam
       Tags:
         - Key: Name
-          Value: Docker-02
+          Value: !Sub ${AWS::StackName}-worker
       KeyName:
         Ref: KeyNameParam
       NetworkInterfaces:
@@ -253,13 +255,13 @@ Resources:
                 - Script01
                 - ScriptList
             - !Sub |
-                #while ! (nc -z ${AwsLinux2DockerInstance1.PrivateIp} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
-                #docker swarm join --token $(docker -H ${AwsLinux2DockerInstance1.PrivateIp} swarm join-token worker -q) ${AwsLinux2DockerInstance1.PrivateIp}:2377
-                echo ${AwsLinux2DockerInstance1.PrivateIp}  master >> /etc/hosts
-                while ! (nc -z ${AwsLinux2DockerInstance1.PrivateIp} 6443) ; do echo 'Aguardando swarm manager...' ; sleep 15 ; done
+                #while ! (nc -z ${AwsLinux2DockerMasterInstance1.PrivateIp} 2377) ; do echo 'Aguardando swarm manager...' ; sleep 10 ; done
+                #docker swarm join --token $(docker -H ${AwsLinux2DockerMasterInstance1.PrivateIp} swarm join-token worker -q) ${AwsLinux2DockerMasterInstance1.PrivateIp}:2377
+                echo ${AwsLinux2DockerMasterInstance1.PrivateIp}  master >> /etc/hosts
+                while ! (nc -z ${AwsLinux2DockerMasterInstance1.PrivateIp} 6443) ; do echo 'Aguardando swarm manager...' ; sleep 15 ; done
                 kubeadm join --discovery-token-unsafe-skip-ca-verification --token=102952.1a7dd4cc8d1f4cc5 master:6443
                 echo "fim"
-    DependsOn: AwsLinux2DockerInstance1
+    DependsOn: AwsLinux2DockerMasterInstance1
 
 ######################
 # Outputs section
@@ -267,20 +269,20 @@ Resources:
 
 Outputs:
 
-  AwsLinux2Docker1PrivateIP:
-    Description: IP of the Docker-01 Linux Instance
-    Value: !GetAtt AwsLinux2DockerInstance1.PrivateIp
+  AwsLinux2DockerMaster1PrivateIP:
+    Description: IP of the master Linux Instance
+    Value: !GetAtt AwsLinux2DockerMasterInstance1.PrivateIp
     Export:
-      Name: !Sub ${AWS::StackName}-Docker1PrivateIP
+      Name: !Sub ${AWS::StackName}-Master1PrivateIP
   AwsLinux2Docker2PrivateIP:
     Description: IP of the Docker-02 Linux Instance
-    Value: !GetAtt AwsLinux2DockerInstance2.PrivateIp
+    Value: !GetAtt AwsLinux2DockerWorkerInstance2.PrivateIp
     Export:
       Name: !Sub ${AWS::StackName}-Docker2PrivateIP
 
-  AwsLinux2Docker1URL:
-    Description: URL of the Docker-01 Linux Instance
-    Value: !Sub 'http://${AwsLinux2DockerInstance1.PublicDnsName}'
-  AwsLinux2Docker2URL:
-    Description: URL of the Docker-02 Linux Instance
-    Value: !Sub 'http://${AwsLinux2DockerInstance2.PublicDnsName}'
+  AwsLinux2DockerMasterURL:
+    Description: URL of the master Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerMasterInstance1.PublicDnsName}'
+  AwsLinux2DockerWorkerURL:
+    Description: URL of the worker Linux Instance
+    Value: !Sub 'http://${AwsLinux2DockerWorkerInstance2.PublicDnsName}'
