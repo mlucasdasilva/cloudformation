@@ -19,7 +19,7 @@ Mappings:
       - "systemctl enable docker \n"
       - "usermod -a -G docker ec2-user \n"
       - "yum install -y nc telnet git \n"
-      - "COMPOSE_VERSION=$(git ls-remote https://github.com/docker/compose | grep refs/tags | grep -oE '[0-9]+\\.[0-9][0-9]+\\.[0-9]+$' | sort --version-sort | tail -n 1) \n"
+      - "COMPOSE_VERSION=$(git ls-remote https://github.com/docker/compose | grep refs/tags | grep -oE '[0-9]+\\.[0-9][0-9]+\\.[0-9]+$' | grep '^1\\..*' | sort --version-sort | tail -n 1) \n"
       - 'curl -L '
       - '"https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)"'
       - " -o /usr/local/bin/docker-compose \n"
