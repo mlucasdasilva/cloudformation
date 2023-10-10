@@ -48,11 +48,17 @@ Parameters:
     Default: key-pair-teste
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
 
-  AmiAwsLinux2DockerParam:
-    Description: Select AWS Linux 2 AMI (x86)
-    Type: AWS::EC2::Image::Id
-    Default: ami-02354e95b39ca8dec
-    ConstraintDescription: must be the ID of an existing AMI.
+#  AmiAwsLinux2DockerParam:
+#    Description: Select AWS Linux 2 AMI (x86)
+#    Type: AWS::EC2::Image::Id
+#    Default: ami-02354e95b39ca8dec
+#    ConstraintDescription: must be the ID of an existing AMI.
+
+  LatestAmiId:
+    Description: Select AWS Linux 2 AMI (x86) with SSM
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+#    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2'
 
   UserDataParam:
     Description: >-
@@ -104,7 +110,8 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceTypeParam
-      ImageId: !Ref AmiAwsLinux2DockerParam
+#      ImageId: !Ref AmiAwsLinux2DockerParam
+      ImageId: !Ref LatestAmiId
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-01
